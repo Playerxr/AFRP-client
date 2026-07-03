@@ -1,0 +1,50 @@
+# ════════════════════════════════════════════════════════════
+# AFRP Client (React Native) — build APK dans le cloud
+# ════════════════════════════════════════════════════════════
+# Client SAMP mobile rebrandé AFRP (base SAMP-Mobile-Launcher-RN).
+# React Native 0.70 → Node 16 + JDK 11 + Android SDK.
+# ════════════════════════════════════════════════════════════
+name: Build AFRP Client
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Compiler le client AFRP
+    runs-on: ubuntu-latest
+    steps:
+      - name: Télécharger le code
+        uses: actions/checkout@v4
+
+      - name: Node 16 (requis par React Native 0.70)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '16'
+
+      - name: Java 11 (Android Gradle)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+
+      - name: Installer les dépendances JS
+        run: npm install --legacy-peer-deps
+
+      - name: Rendre Gradle exécutable
+        run: chmod +x android/gradlew
+
+      - name: Compiler l'APK debug (sans signature — pour valider le build)
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        env:
+          GRADLE_OPTS: "-Xmx4g -XX:+UseG1GC"
+
+      - name: Publier l'APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: AFRP-Client-${{ github.run_number }}
+          path: android/app/build/outputs/apk/**/*.apk
+          retention-days: 30
