@@ -28,11 +28,11 @@ export const UpdateStartScreen = React.memo(
 
     return (
       <LoaderContainer>
-        <Text style={styles.title}>Доступно обновление!</Text>
+        <Text style={styles.title}>Mise à jour disponible !</Text>
         <Text style={styles.alert}>
-          Нажмите
-          <Text style={styles.accent}> обновить</Text>, чтобы подтвердить
-          {'\n'} загрузку файлов.
+          Appuie sur
+          <Text style={styles.accent}> mettre à jour</Text> pour confirmer
+          {'\n'} le téléchargement des fichiers.
         </Text>
         <View style={styles.buttons}>
           <ButtonLauncher
@@ -40,7 +40,7 @@ export const UpdateStartScreen = React.memo(
             background={'#5476db'}
             IconLeft={DownloadSvg}
             onPress={onPressDownload}>
-            Обновить
+            Mettre à jour
           </ButtonLauncher>
         </View>
       </LoaderContainer>

@@ -22,19 +22,25 @@ export const ErrorScreen = React.memo(
     return (
       <LoaderContainer>
         <Text style={styles.title}>
-          Не удаётся подключиться{'\n'}
-          <Text>к ресурсам лаунчера</Text>
+          Connexion impossible{'\n'}
+          <Text>aux ressources du launcher</Text>
         </Text>
         <Text style={styles.alert}>
-          Проверьте интернет соединение на устройстве, или попробуйте зайти
-          позже.
+          Vérifie ta connexion internet, ou réessaie plus tard.
         </Text>
         <View style={styles.buttons}>
           <ButtonLauncher
             btnWidth={'100%'}
             background={'#5476db'}
             onPress={reloadHandler}>
-            Повторить попытку
+            Réessayer
+          </ButtonLauncher>
+          <View style={{ height: 12 }} />
+          <ButtonLauncher
+            btnWidth={'100%'}
+            background={'#3a3f52'}
+            onPress={() => navigation.navigate('Staff')}>
+            Espace Staff
           </ButtonLauncher>
         </View>
       </LoaderContainer>

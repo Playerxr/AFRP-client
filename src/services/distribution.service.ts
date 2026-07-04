@@ -1,11 +1,13 @@
-import { URL_DISTRIBUTION } from '@env';
 import axios from 'axios';
 import { CacheType } from '../actions/loaderActions';
+import { StaffConfig } from '../features/staffConfig';
 
 export const DistributionService = {
   async get() {
+    // URL modifiable depuis l'Espace Staff (sinon valeur du .env)
+    const url = await StaffConfig.getDistributionUrl();
     const response = await axios
-      .get<DistributionResponseType>(URL_DISTRIBUTION)
+      .get<DistributionResponseType>(url)
       .then(res => res.data);
     return response;
   },

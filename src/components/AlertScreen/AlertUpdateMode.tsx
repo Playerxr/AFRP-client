@@ -31,15 +31,15 @@ export const AlertUpdateMode = React.memo(() => {
   return (
     <AlertLauncher
       show={show}
-      title="Внимание"
+      title="Attention"
       useNativeDriver={true}
       closeOnTouchOutside={false}
       closeOnHardwareBackPress={false}
-      message="Вам необходимо скачать недостающие файлы игры."
+      message="Tu dois télécharger les fichiers manquants du jeu."
       showConfirmButton={true}
-      confirmText="Отмена"
+      confirmText="Annuler"
       showCancelButton={true}
-      cancelText="Загрузить"
+      cancelText="Télécharger"
       onCancelPressed={onConfirmPressed}
       onConfirmPressed={onCancelPressed}
     />

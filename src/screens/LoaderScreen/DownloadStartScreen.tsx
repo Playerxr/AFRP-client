@@ -28,10 +28,10 @@ export const DownloadStartScreen = React.memo(
 
     return (
       <LoaderContainer>
-        <Text style={styles.titleSub}>Привет 👋</Text>
+        <Text style={styles.titleSub}>Bienvenue 👋</Text>
         <Text style={styles.subtitle}>
-          Рады видеть тебя на{'\n'}
-          нашем проекте!
+          Content de te voir sur{'\n'}
+          AFRP !
         </Text>
         <View style={styles.buttons}>
           <ButtonLauncher
@@ -39,7 +39,14 @@ export const DownloadStartScreen = React.memo(
             background={'#5476db'}
             IconLeft={DownloadSvg}
             onPress={onPressDownload}>
-            Скачать игру
+            Télécharger le jeu
+          </ButtonLauncher>
+          <View style={{ height: 12 }} />
+          <ButtonLauncher
+            btnWidth={'100%'}
+            background={'#3a3f52'}
+            onPress={() => navigation.navigate('Staff')}>
+            Espace Staff
           </ButtonLauncher>
         </View>
       </LoaderContainer>

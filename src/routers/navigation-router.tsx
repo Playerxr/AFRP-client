@@ -25,6 +25,7 @@ import { UpdateScreen } from '../screens/LoaderScreen/UpdateScreen';
 import { UpdateStartScreen } from '../screens/LoaderScreen/UpdateStartScreen';
 import { ModeScreen } from '../screens/ModeScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
+import { StaffScreen } from '../screens/StaffScreen';
 import * as Icons from './../assets/svg';
 import { navigationRef } from './RootNavigation';
 
@@ -97,6 +98,7 @@ export const NavigationRouter = React.memo(() => {
                 name="LauncherUpdateScreen"
                 component={LauncherUpdateScreen}
               />
+              <Stack.Screen name="Staff" component={StaffScreen} />
             </Stack.Navigator>
           </BottomSheetModalProvider>
         </GestureHandlerRootView>
@@ -109,7 +111,7 @@ const Tabs = AnimatedTabBarNavigator();
 export const TabBarNavigation = React.memo(() => {
   return (
     <Tabs.Navigator
-      initialRouteName="Играть"
+      initialRouteName="Jouer"
       backBehavior={'initialRoute'}
       tabBarOptions={{
         activeTintColor: '#ffffff',
@@ -123,7 +125,7 @@ export const TabBarNavigation = React.memo(() => {
         tabBarBackground: '#212231',
       }}>
       <Tabs.Screen
-        name="Донат"
+        name="Boutique"
         component={DonateScreen}
         options={{
           headerShown: true,
@@ -135,7 +137,7 @@ export const TabBarNavigation = React.memo(() => {
         }}
       />
       <Tabs.Screen
-        name="Играть"
+        name="Jouer"
         component={GameScreen}
         options={{
           headerShown: true,
@@ -147,7 +149,7 @@ export const TabBarNavigation = React.memo(() => {
         }}
       />
       <Tabs.Screen
-        name="Настройки"
+        name="Réglages"
         component={SettingsScreen}
         options={{
           headerShown: true,

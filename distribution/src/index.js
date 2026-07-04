@@ -8,18 +8,26 @@ const { md5FileSync } = require('./md5');
 const versionHash = Math.random().toString(36).substring(7);
 const distributionGeneratePath = './build/distribution.json';
 
-const dirCache = './../../distributions/cache';
-const dirCacheSnow = './../../distributions/cache_snow';
-const dirLauncher = './../../distributions/launcher';
+// Dossier du cache = contenu qui doit atterrir dans Android/data/<pkg>/files du jeu.
+// = le dossier "files/" du modpack Slime/AFRP. Surchargeable via la variable
+// d'env AFRP_CACHE_DIR (ex: AFRP_CACHE_DIR="D:/.../Slime Modpack/files" npm run build).
+const dirCache = process.env.AFRP_CACHE_DIR || './../../distributions/cache';
+const dirCacheSnow = './../../distributions/cache_snow'; // optionnel (mode hiver, non utilisé par AFRP)
+const dirLauncher = './../../distributions/launcher'; // optionnel (APK d'auto-MAJ)
 
-const projectName = 'Touch Mobile';
+const projectName = 'AFRP';
+// NE PAS CHANGER : chemins codés en dur dans libsamp.so (voir .env du client)
 const packageName = 'com.touch.mobile.dark';
 
-const cdnCache = 'https://game.touch-rp.com/mobile/cache';
-const cdnLauncher = 'https://game.touch-rp.com/mobile/launcher';
+// HEBERGEMENT Cloudflare R2 : remplacer par l'URL publique du bucket.
+// Format bucket public managé : https://pub-<hash>.r2.dev
+// (ou un domaine perso branché sur R2). Les fichiers du cache doivent être
+// accessibles en GET statique à <cdnCache>/<sous-dossier>/<fichier>.
+const cdnCache = 'https://VOTRE-BUCKET.r2.dev/mobile/cache';
+const cdnLauncher = 'https://VOTRE-BUCKET.r2.dev/mobile/launcher';
 
-const appVersion = '0.0.39';
-const rss = 'https://touch-rp.com/api/launcer/news';
+const appVersion = '1.0.0';
+const rss = 'https://VOTRE-BUCKET.r2.dev/api/launcher/news';
 
 const filesContinue = ['settings.ini', 'gta_sa.set', 'svconfig.ini'];
 const filesIgnore = ['samp_log.txt', 'crash_log.log', 'gtasatelem.set'];
@@ -34,18 +42,25 @@ return new Promise(async () => {
 	const cacheMerge = [];
 	let cacheMergeId = 1;
 
-	// Launcher
+	// Launcher (APK d'auto-MAJ) — OPTIONNEL : on n'échoue pas s'il est absent.
 	const clientPaths = await findFiles(
 		`${path.resolve(dirLauncher)}/app-release.apk`
 	);
 
-	const clientCache = {
-		appVersion,
-		name: `app-release.apk`,
-		hash: await md5FileSync(clientPaths[0]),
-		mtime: unixTimeStamp(fs.statSync(clientPaths[0]).mtime),
-		bytes: fs.statSync(clientPaths[0]).size,
-	};
+	let clientCache = null;
+	if (clientPaths.length > 0) {
+		clientCache = {
+			appVersion,
+			name: `app-release.apk`,
+			hash: await md5FileSync(clientPaths[0]),
+			mtime: unixTimeStamp(fs.statSync(clientPaths[0]).mtime),
+			bytes: fs.statSync(clientPaths[0]).size,
+		};
+	} else {
+		console.log(
+			'⚠  Pas d\'app-release.apk dans distributions/launcher — auto-MAJ désactivée.'
+		);
+	}
 
 	// Cache основной
 	const filePaths = await findFiles(`${path.resolve(dirCache)}/**/*`);
@@ -148,6 +163,7 @@ return new Promise(async () => {
 		}
 	}
 
+	fs.mkdirSync(path.dirname(distributionGeneratePath), { recursive: true });
 	fs.writeFileSync(
 		distributionGeneratePath,
 		JSON.stringify(
@@ -161,50 +177,30 @@ return new Promise(async () => {
 				cdnCache,
 				cdnLauncher,
 				filesContinue,
-				launcher: clientCache,
+				// appVersion 0.0.0 => jamais > APP_VERSION => pas d'invite d'auto-MAJ
+				launcher: clientCache || {
+					appVersion: '0.0.0',
+					name: '',
+					hash: '',
+					bytes: 0,
+				},
 				servers: [
 					{
 						id: 1,
 						show: true,
 						version: '1.0',
-						icon: 'https://game.touch-rp.com/mobile/image/pro_icon.jpeg',
+						icon: 'https://VOTRE-BUCKET.r2.dev/mobile/image/afrp_icon.png',
 						events: [
 							{
-								title: 'Акция x2',
-								style: 'red',
-							},
-							{
-								title: 'Контейнеры',
+								title: 'Bienvenue',
 								style: 'blue',
 							},
 						],
 						slot: 100,
 						bonus: true,
-						name: 'PRO - Server',
+						name: 'AFRP - Afrique RP',
 						description: 'SA-MP Mobile',
-						address: '176.32.39.214:7777',
-						sampVersion: '0.3.7',
-					},
-					{
-						id: 100,
-						show: false,
-						version: '1.0',
-						icon: 'https://game.touch-rp.com/mobile/image/pro_icon.jpeg',
-						events: [
-							{
-								title: 'Акция x2',
-								style: 'red',
-							},
-							{
-								title: 'Контейнеры',
-								style: 'blue',
-							},
-						],
-						slot: 1000,
-						bonus: false,
-						name: 'Localhost',
-						description: 'SA-MP Mobile',
-						address: '127.0.0.1:7777',
+						address: '51.38.205.167:24328',
 						sampVersion: '0.3.7',
 					},
 				],

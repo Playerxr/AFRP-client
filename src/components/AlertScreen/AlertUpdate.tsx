@@ -21,15 +21,15 @@ export const AlertUpdate = React.memo(() => {
   return (
     <AlertLauncher
       show={show}
-      title="Внимание"
+      title="Attention"
       useNativeDriver={true}
       closeOnTouchOutside={false}
       closeOnHardwareBackPress={false}
-      message="Доступно новая версия лаунчера. Для комфортной игры на нашем проекте, советуем обновить приложения"
+      message="Une nouvelle version de l'app est disponible. Pour une meilleure expérience sur AFRP, on te conseille de mettre à jour."
       showConfirmButton={true}
-      confirmText="Обновить"
+      confirmText="Mettre à jour"
       showCancelButton={true}
-      cancelText="Позже"
+      cancelText="Plus tard"
       onCancelPressed={onConfirmPressed}
       onConfirmPressed={onPressCancel}
     />

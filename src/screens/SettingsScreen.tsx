@@ -1,4 +1,5 @@
 import { APP_VERSION } from '@env';
+import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import { setAlertUpdatingMode } from '../actions/alertActions';
@@ -10,7 +11,12 @@ import {
   setSettingPageSize,
   setUserNameSetting,
 } from '../actions/settingsActions';
-import { MainContainer, RangeLauncher, SwitchLauncher } from '../components';
+import {
+  ButtonLauncher,
+  MainContainer,
+  RangeLauncher,
+  SwitchLauncher,
+} from '../components';
 import { AlertUpdateMode } from '../components/AlertScreen/AlertUpdateMode';
 import { InputLauncher } from '../components/InputLauncher/InputLauncher';
 import { useAppDispatch } from '../hooks/useAppDispatch';
@@ -35,6 +41,7 @@ export const SettingsScreen = React.memo(() => {
   const settings = useAppSelector(selectSettings);
   const settingMode = useAppSelector(selectModeType);
   const dispatch = useAppDispatch();
+  const navigation = useNavigation<any>();
 
   const onEndEditingUserName = React.useCallback((value: string) => {
     dispatch(fetchUserNameSetting(value));
@@ -96,44 +103,44 @@ export const SettingsScreen = React.memo(() => {
       <MainContainer>
         <View style={styles.settingWrapper}>
           <View style={styles.setting}>
-            <Text style={styles.title}>Настройки</Text>
+            <Text style={styles.title}>Réglages</Text>
           </View>
           <ScrollView>
             <View style={styles.body}>
               <View>
                 <InputLauncher
                   Icon={Icons.UnionSvg}
-                  title={'Ваш никнейм'}
+                  title={'Ton pseudo'}
                   value={settings.userName}
                   onChangeText={onEndEditingUserName}
-                  placeholder={'Пример: Don_Corleone'}
+                  placeholder={'Ex : Don_Corleone'}
                 />
               </View>
               <View style={styles.switch}>
                 <SwitchLauncher
                   onValueChange={onValueChangeSnow}
                   value={+settingMode}
-                  title={'Зимняя карта'}
+                  title={'Carte hiver'}
                 />
                 <SwitchLauncher
                   onValueChange={onValueChangeGraphic}
                   value={+settings.graphic}
-                  title={'Улучшенная графика'}
+                  title={'Graphismes améliorés'}
                 />
                 <SwitchLauncher
                   onValueChange={onValueChangeFPS}
                   value={+settings.fpscounter}
-                  title={'Счётчик FPS'}
+                  title={'Compteur FPS'}
                 />
                 <SwitchLauncher
                   onValueChange={onValueChangeKeyboard}
                   value={+settings.androidKeyboard}
-                  title={'Android Keyboard'}
+                  title={'Clavier Android'}
                 />
               </View>
               <View style={styles.range}>
                 <RangeLauncher
-                  title={'FPS в игре'}
+                  title={'FPS en jeu'}
                   minimumValue={20}
                   maximumValue={60}
                   range={settings.fpsLimit}
@@ -141,7 +148,7 @@ export const SettingsScreen = React.memo(() => {
                   onSlidingComplete={onSlidingCompleteFps}
                 />
                 <RangeLauncher
-                  title={'Количество строк в чате'}
+                  title={'Lignes de chat'}
                   minimumValue={5}
                   maximumValue={20}
                   range={settings.pageSize}
@@ -149,9 +156,17 @@ export const SettingsScreen = React.memo(() => {
                   onSlidingComplete={onSlidingCompletePageSize}
                 />
               </View>
+              <View style={{ marginTop: 18 }}>
+                <ButtonLauncher
+                  btnWidth={'100%'}
+                  background={'#3a3f52'}
+                  onPress={() => navigation.navigate('Staff')}>
+                  Espace Staff
+                </ButtonLauncher>
+              </View>
             </View>
           </ScrollView>
-          <Text style={styles.version}>Версия {APP_VERSION}</Text>
+          <Text style={styles.version}>Version {APP_VERSION}</Text>
         </View>
       </MainContainer>
       <AlertUpdateMode />

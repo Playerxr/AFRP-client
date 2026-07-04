@@ -13,7 +13,7 @@ export const AlertUserName = React.memo(() => {
 
   const onPressCancel = useCallback(async () => {
     dispatch(setAlertUserName(false));
-    return navigation.jumpTo('Настройки');
+    return navigation.jumpTo('Réglages');
   }, []);
 
   const onConfirmPressed = useCallback(() => {
@@ -23,15 +23,15 @@ export const AlertUserName = React.memo(() => {
   return (
     <AlertLauncher
       show={show}
-      title="Подсказка"
+      title="Info"
       useNativeDriver={true}
       closeOnTouchOutside={false}
       closeOnHardwareBackPress={false}
-      message="Необходимо установить Имя_Фамилию в настройках"
+      message="Tu dois définir ton Prénom_Nom dans les réglages"
       showConfirmButton={true}
-      confirmText="Настройки"
+      confirmText="Réglages"
       showCancelButton={true}
-      cancelText="Закрыть"
+      cancelText="Fermer"
       onCancelPressed={onConfirmPressed}
       onConfirmPressed={onPressCancel}
     />

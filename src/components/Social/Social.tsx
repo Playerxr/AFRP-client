@@ -12,7 +12,7 @@ import { styles } from './SocialStyle';
 
 export const socials = [
   {
-    title: 'Сайт',
+    title: 'Site',
     link: LINK_SITE,
     icon: logoLinkIcon,
   },
@@ -22,7 +22,7 @@ export const socials = [
     icon: vkLinkIcon,
   },
   {
-    title: 'Discrod',
+    title: 'Discord',
     link: LINK_DISCORD,
     icon: discordLinkIcon,
   },
@@ -40,7 +40,7 @@ export const Social = React.memo(() => {
 
   return (
     <View style={styles.social}>
-      <Text style={styles.title}>Социальные сети</Text>
+      <Text style={styles.title}>Réseaux sociaux</Text>
       <View style={styles.body}>
         {socials.map((el, key) => (
           <LinearGradient

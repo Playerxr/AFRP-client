@@ -45,12 +45,12 @@ export const LoaderContainer = React.memo((props: LoaderContainerType) => {
           </View>
           <View style={styles.footer}>
             <Text style={styles.description}>
-              <Text style={styles.accent}>Внимание!</Text> НЕ СВОРАЧИВАЙТЕ И НЕ
-              ЗАКРЫВАЙТЕ{'\n'}
-              ПРИЛОЖЕНИЕ ДО ЕГО ПОЛНОГО ЗАПУСКА{'\n'}
-              Если у Вас возникли проблемы, советуем{'\n'} обратиться в{' '}
+              <Text style={styles.accent}>Attention !</Text> NE RÉDUIS PAS ET NE
+              FERME PAS{'\n'}
+              L'APPLICATION AVANT SON LANCEMENT COMPLET{'\n'}
+              En cas de problème, on te conseille de{'\n'} contacter le{' '}
               <Text onPress={supportHandler} style={styles.link}>
-                Техническую поддержку
+                Support technique
               </Text>
             </Text>
           </View>

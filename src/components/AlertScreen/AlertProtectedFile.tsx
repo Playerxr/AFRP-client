@@ -24,15 +24,15 @@ export const AlertProtectedFile = React.memo(() => {
   return (
     <AlertLauncher
       show={show}
-      title="Подсказка"
+      title="Info"
       useNativeDriver={true}
       closeOnTouchOutside={false}
       closeOnHardwareBackPress={false}
-      message="Нет прав на запись / чтение файлов"
+      message="Pas d'autorisation de lecture / écriture des fichiers"
       showConfirmButton={true}
-      confirmText="Настройки"
+      confirmText="Réglages"
       showCancelButton={true}
-      cancelText="Закрыть"
+      cancelText="Fermer"
       onCancelPressed={onConfirmPressed}
       onConfirmPressed={onPressCancel}
     />

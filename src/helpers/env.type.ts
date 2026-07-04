@@ -13,4 +13,5 @@ declare module '@env' {
   export const PACKAGE_NAME: string;
   export const PROJECT_NAME: string;
   export const APP_VERSION: string;
+  export const STAFF_PASSWORD: string;
 }

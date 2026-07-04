@@ -3,6 +3,9 @@
 # ════════════════════════════════════════════════════════════
 # Client SAMP mobile rebrandé AFRP (base SAMP-Mobile-Launcher-RN).
 # React Native 0.70 → Node 16 + JDK 11 + Android SDK.
+# IMPORTANT : runner épinglé sur ubuntu-22.04. Sur ubuntu-latest (passé à 24.04),
+# les NDK/outils Android attendus par RN 0.70 (ndk 24.0.8215888 / 21.4.7075529)
+# ne sont plus présents → build qui était vert devient rouge. 22.04 les fournit.
 # ════════════════════════════════════════════════════════════
 name: Build AFRP Client
 
@@ -14,7 +17,7 @@ on:
 jobs:
   build:
     name: Compiler le client AFRP
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Télécharger le code
         uses: actions/checkout@v4
@@ -29,6 +32,16 @@ jobs:
         with:
           java-version: '11'
           distribution: 'temurin'
+
+      # RN 0.70 exige le NDK 21.4.7075529 (runner x86_64) pour compiler le natif
+      # de reanimated. GitHub l'a retiré de ses images → on l'installe nous-mêmes,
+      # avec build-tools 31.0.0 et la plateforme android-33.
+      - name: Installer le NDK 21.4.7075529 + composants Android
+        run: |
+          SDKROOT="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          SDKMGR="$SDKROOT/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMGR" --licenses > /dev/null 2>&1 || true
+          "$SDKMGR" --install "ndk;21.4.7075529" "build-tools;31.0.0" "platforms;android-33" "platform-tools"
 
       - name: Installer les dépendances JS
         run: npm install --legacy-peer-deps
