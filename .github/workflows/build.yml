@@ -49,9 +49,13 @@ jobs:
       - name: Rendre Gradle exécutable
         run: chmod +x android/gradlew
 
-      - name: Compiler l'APK debug (sans signature — pour valider le build)
+      # RELEASE (pas debug !) : un APK debug essaie de joindre le serveur Metro
+      # au démarrage (getUseDeveloperSupport = BuildConfig.DEBUG) → bloqué sur le
+      # splash sur téléphone. Le release embarque le JS et tourne en autonome.
+      # Signé avec android/app/debug.keystore (déjà branché sur buildTypes.release).
+      - name: Compiler l'APK release (autonome, JS embarqué)
         working-directory: android
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
         env:
           GRADLE_OPTS: "-Xmx4g -XX:+UseG1GC"
 
