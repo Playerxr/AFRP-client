@@ -40,7 +40,8 @@ public class MainActivity extends ReactActivity {
    */
   @Override
   protected String getMainComponentName() {
-    return "TouchMobile";
+    // Doit correspondre au "name" de app.json (AppRegistry.registerComponent)
+    return "AFRP";
   }
 
   /**
