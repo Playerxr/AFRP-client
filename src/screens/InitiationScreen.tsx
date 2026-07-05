@@ -8,13 +8,8 @@ import { LoaderContainer } from '../components';
 import { useAppDispatch } from '../hooks/useAppDispatch';
 import { useAppSelector } from '../hooks/useAppSelector';
 import { selectInitial } from '../selectors/appSelectors';
-import {
-  selectIsSuccessDownload,
-  selectRejectCount,
-} from '../selectors/loaderSelectors';
 import { styles } from '../styles/LoaderStyle';
 import { fetchInitialApp } from '../thunks/appThunks';
-import { autoUpdateLauncher } from '../thunks/launcherTunks';
 const width = Dimensions.get('window').width;
 
 type InitiationScreenType = NativeStackScreenProps<any>;
@@ -23,29 +18,15 @@ export const InitiationScreen = React.memo(
   ({ navigation }: InitiationScreenType) => {
     const dispatch = useAppDispatch();
     const isInitial = useAppSelector(selectInitial);
-    const isSuccessDownload = useAppSelector(selectIsSuccessDownload);
-    const rejectCount = useAppSelector(selectRejectCount);
 
     useEffect(() => {
       dispatch(fetchInitialApp());
     }, []);
 
-    useEffect(() => {
-      if (isInitial) {
-        if (rejectCount) {
-          if (isSuccessDownload === false && rejectCount) {
-            return navigation.replace('DownloadStartScreen');
-          }
-
-          if (rejectCount) {
-            return navigation.replace('UpdateStartScreen');
-          }
-        }
-
-        dispatch(autoUpdateLauncher());
-      }
-    }, [isInitial, isSuccessDownload, rejectCount]);
-
+    // On va TOUJOURS directement à l'accueil (Main), même si des fichiers
+    // manquent : le téléchargement se fait depuis l'accueil (comme le launcher),
+    // pas via un écran bloquant. (rejectCount/isSuccessDownload/autoUpdateLauncher
+    // ne servent plus à rediriger ici.)
     useFocusEffect(
       React.useCallback(() => {
         if (isInitial) {

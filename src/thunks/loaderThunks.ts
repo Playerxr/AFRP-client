@@ -81,7 +81,9 @@ export const compareFileRecursion =
     );
   };
 
-export const fetchStartDownload = (): AppThunk => async (dispatch, state) => {
+export const fetchStartDownload =
+  (opts?: { silent?: boolean }): AppThunk =>
+  async (dispatch, state) => {
   const { cdnCache } = state().distribution;
   const { rejectCount } = state().loader.compare;
   const { needDownload } = state().loader;
@@ -171,14 +173,22 @@ export const fetchStartDownload = (): AppThunk => async (dispatch, state) => {
       }
     } catch (error) {
       dispatch(onUploadTaskEventLoader({ status: 'complete' }));
+      // silent = téléchargement lancé depuis l'accueil : on reste sur place,
+      // l'accueil détecte l'échec (needDownload non vidé) et propose "Réessayer"
+      if (opts?.silent) {
+        return;
+      }
       return navigationRef.current?.dispatch(StackActions.replace('Error'));
     }
   }
 
   dispatch(onUploadTaskEventLoader({ status: 'complete' }));
   dispatch(fetchIsDownloadSuccess());
+  if (opts?.silent) {
+    return;
+  }
   return navigationRef.current?.dispatch(StackActions.replace('Main'));
-};
+  };
 
 export const nameFileRecursion = (): AppThunk => async (dispatch, state) => {
   const cacheMode = state().distribution.cacheMode;

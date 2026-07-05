@@ -11,16 +11,25 @@ import {
   View,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
+import * as Progress from 'react-native-progress';
 import { setUserNameSetting } from '../actions/settingsActions';
 import { appLogoImg } from '../assets/images';
 import { Cards } from '../components/Card/Cards';
+import { formatSizeUnits } from '../helpers';
+import { usePermisionFile } from '../hooks/usePermisionFile';
+import { useSpaceDownlload } from '../hooks/useSpaceDownload';
 import { useAppDispatch } from '../hooks/useAppDispatch';
 import { useAppSelector } from '../hooks/useAppSelector';
 import { selectSelectedServer } from '../selectors/appSelectors';
+import {
+  selectCompare,
+  selectLoaderDownload,
+} from '../selectors/loaderSelectors';
 import { selectServer } from '../selectors/serverSelectors';
 import { selectUserName } from '../selectors/settingSelectors';
 import { dbRef } from '../services/afrpDb';
 import { fetchServers } from '../thunks/serverThunks';
+import { fetchStartDownload } from '../thunks/loaderThunks';
 import { fetchUserNameSetting } from '../thunks/settingsThunks';
 import GtaSetupModule from '../modules/GtaSetupModule';
 
@@ -40,13 +49,34 @@ export const GameScreen = React.memo(() => {
       state.distribution.servers[0],
   );
 
+  // État du cache : combien de fichiers restent à télécharger + progression
+  const needCount = useAppSelector(state => state.loader.needDownload.length);
+  const compare = useAppSelector(selectCompare);
+  const download = useAppSelector(selectLoaderDownload);
+  const { fetchPermision } = usePermisionFile();
+  const { fetchSpace } = useSpaceDownlload();
+
   const [pseudo, setPseudo] = useState(userName);
   const [needPseudo, setNeedPseudo] = useState(false);
   const [annonce, setAnnonce] = useState('');
+  const [downloading, setDownloading] = useState(false);
+  const [dlError, setDlError] = useState(false);
 
   useEffect(() => {
     dispatch(fetchServers());
   }, []);
+
+  // % de progression du téléchargement (octets déjà pris / octets à prendre)
+  const percent =
+    compare.needDownloadsCacheBytes > 0
+      ? Math.min(
+          100,
+          Math.floor(
+            ((download.downloadBytes || 0) * 100) /
+              compare.needDownloadsCacheBytes,
+          ),
+        )
+      : 0;
 
   // Annonce du jour (app_config/annonce — publiée depuis l'Espace Staff,
   // partagée avec l'app AFRP Launcher)
@@ -73,21 +103,64 @@ export const GameScreen = React.memo(() => {
     }
   }, [pseudo]);
 
-  const onPressPlay = useCallback(async () => {
+  // Bouton principal :
+  //  - fichiers manquants -> télécharge (jauge intégrée), puis lance
+  //  - tout est là         -> lance le jeu directement
+  const onPressAction = useCallback(async () => {
     if (pseudo.trim().length < 1) {
       setNeedPseudo(true);
       return;
     }
+
+    if (needCount > 0) {
+      if (!fetchPermision()) {
+        return;
+      }
+      if (!fetchSpace()) {
+        return;
+      }
+      setDlError(false);
+      setDownloading(true);
+      await dispatch(fetchStartDownload({ silent: true }));
+      setDownloading(false);
+      return; // besoin de re-cliquer JOUER une fois le cache complet
+    }
+
     await GtaSetupModule.startGame();
-  }, [pseudo]);
+  }, [pseudo, needCount]);
+
+  const btnLabel = downloading
+    ? `TÉLÉCHARGEMENT ${percent}%`
+    : needCount > 0
+    ? dlError
+      ? '↻  RÉESSAYER LE TÉLÉCHARGEMENT'
+      : '⬇  INSTALLER & JOUER'
+    : '▶  JOUER';
 
   const statusText = needPseudo
     ? 'Entre ton pseudo pour jouer'
+    : downloading
+    ? `${download.fileName ?? ''}  [${formatSizeUnits(
+        download.downloadBytes || 0,
+      )} / ${formatSizeUnits(compare.needDownloadsCacheBytes || 0)}]`
+    : dlError
+    ? 'Téléchargement interrompu — réessaie'
+    : needCount > 0
+    ? `Modpack AFRP à installer (${formatSizeUnits(
+        compare.needDownloadsCacheBytes || 0,
+      )})`
     : server?.loading
     ? 'Connexion au serveur...'
     : server?.status
     ? 'Prêt à jouer sur AFRP'
     : 'Serveur indisponible pour le moment';
+
+  // Détecte un échec : après un cycle de DL, s'il reste des fichiers -> erreur
+  useEffect(() => {
+    if (!downloading && needCount > 0 && (download.downloadBytes || 0) > 0) {
+      setDlError(true);
+    }
+  }, [downloading]);
 
   return (
     <View style={styles.root}>
@@ -162,12 +235,30 @@ export const GameScreen = React.memo(() => {
           {statusText}
         </Text>
 
+        {/* Jauge de progression (visible seulement pendant le téléchargement) */}
+        {downloading && (
+          <View style={styles.gaugeWrap}>
+            <Progress.Bar
+              progress={percent / 100}
+              animated
+              useNativeDriver
+              borderWidth={0}
+              color={'#00c880'}
+              unfilledColor={'#12283c'}
+              borderRadius={20}
+              height={8}
+              width={width - 32}
+            />
+          </View>
+        )}
+
         {/* Bouton principal */}
         <TouchableOpacity
           activeOpacity={0.85}
-          style={styles.btnAction}
-          onPress={onPressPlay}>
-          <Text style={styles.btnActionText}>▶  JOUER</Text>
+          style={[styles.btnAction, downloading && styles.btnActionBusy]}
+          disabled={downloading}
+          onPress={onPressAction}>
+          <Text style={styles.btnActionText}>{btnLabel}</Text>
         </TouchableOpacity>
 
         <Text style={styles.serverLine}>
@@ -328,6 +419,11 @@ const styles = StyleSheet.create({
   statusError: {
     color: '#ff7a7a',
   },
+  gaugeWrap: {
+    marginHorizontal: 16,
+    marginBottom: 10,
+    alignItems: 'center',
+  },
   btnAction: {
     height: 58,
     marginHorizontal: 16,
@@ -335,6 +431,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#00a86b',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  btnActionBusy: {
+    backgroundColor: '#0a5030',
   },
   btnActionText: {
     color: '#ffffff',
