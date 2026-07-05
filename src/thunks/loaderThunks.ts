@@ -122,10 +122,14 @@ export const fetchStartDownload = (): AppThunk => async (dispatch, state) => {
         }),
       );
 
-      // Fichier racine (path vide) => éviter le double slash dans l'URL (404 sur R2)
-      const relPath = toFile ? `${toFile}/${toName}` : toName;
+      // URL encodée par segment (espaces, parenthèses, accents dans les noms de
+      // fichiers) + pas de double slash pour les fichiers à la racine du cache.
+      const encName = encodeURIComponent(toName);
+      const encDir = toFile
+        ? toFile.split('/').map(encodeURIComponent).join('/') + '/'
+        : '';
       const res = await FileDownload.download({
-        fromUrl: `${urlValid}/${relPath}`,
+        fromUrl: `${urlValid}/${encDir}${encName}`,
         toFile,
         toName,
         progress: ({ bytesWritten }: DownloadProgressType) => {

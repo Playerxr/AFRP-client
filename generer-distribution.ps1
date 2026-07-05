@@ -6,7 +6,7 @@
 
 # ---- Réglages (modifie si besoin) ----
 $CacheDir = "C:\afrp-cache"
-$OutFile  = "C:\afrp-distribution.json"
+$OutFile  = "$env:USERPROFILE\afrp-distribution.json"
 $Base     = "https://pub-966b7e566edc48fa911560ca57a5b415.r2.dev"
 # --------------------------------------
 
