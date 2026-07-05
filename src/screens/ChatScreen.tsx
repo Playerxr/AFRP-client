@@ -47,7 +47,10 @@ export const ChatScreen = React.memo(() => {
 
   const [msgs, setMsgs] = useState<ChatMsg[]>([]);
   const [text, setText] = useState('');
-  const [typing, setTyping] = useState<string[]>([]);
+  const [typingEntries, setTypingEntries] = useState<
+    { name: string; ts: number }[]
+  >([]);
+  const [, setTick] = useState(0);
   const [hint, setHint] = useState('');
   const lastTypingWrite = useRef(0);
 
@@ -83,26 +86,62 @@ export const ChatScreen = React.memo(() => {
     try {
       const r = dbRef('global_chat/typing');
       const cb = r.on('value', snap => {
-        const names: string[] = [];
-        const limit = Date.now() - 6000;
+        const list: { name: string; ts: number }[] = [];
         snap.forEach(child => {
           const ts = child.val();
           if (
             typeof ts === 'number' &&
-            ts > limit &&
+            child.key &&
             child.key !== safeKey(userName)
           ) {
-            names.push(child.key ?? '');
+            list.push({ name: child.key, ts });
           }
           return undefined;
         });
-        setTyping(names);
+        setTypingEntries(list);
       });
       return () => r.off('value', cb);
     } catch (e) {
       return undefined;
     }
   }, [userName]);
+
+  // Ré-évalue toutes les 3 s pour effacer les "écrit..." périmés
+  useEffect(() => {
+    if (typingEntries.length === 0) {
+      return undefined;
+    }
+    const t = setInterval(() => setTick(x => x + 1), 3000);
+    return () => clearInterval(t);
+  }, [typingEntries.length]);
+
+  // "Junior_Seka" -> "Junior_S." quand ils sont plusieurs
+  const abbrev = (n: string) => {
+    const parts = n.split('_');
+    if (parts.length >= 2 && parts[1].length > 0) {
+      return `${parts[0]}_${parts[1][0]}.`;
+    }
+    return n.length > 12 ? `${n.slice(0, 12)}…` : n;
+  };
+
+  const typingNames = typingEntries
+    .filter(e => e.ts > Date.now() - 6000)
+    .map(e => e.name);
+
+  const typingText =
+    typingNames.length === 0
+      ? ''
+      : typingNames.length === 1
+      ? `${typingNames[0]} est en train d'écrire...`
+      : typingNames.length === 2
+      ? `${abbrev(typingNames[0])} et ${abbrev(typingNames[1])} écrivent...`
+      : typingNames.length === 3
+      ? `${abbrev(typingNames[0])}, ${abbrev(typingNames[1])} et ${abbrev(
+          typingNames[2],
+        )} écrivent...`
+      : `${abbrev(typingNames[0])}, ${abbrev(typingNames[1])} et ${
+          typingNames.length - 2
+        } autres écrivent...`;
 
   const onChangeText = useCallback(
     (value: string) => {
@@ -178,10 +217,8 @@ export const ChatScreen = React.memo(() => {
         removeClippedSubviews
       />
 
-      {typing.length > 0 && (
-        <Text style={styles.typing}>
-          {typing.slice(0, 2).join(', ')} écrit...
-        </Text>
+      {typingText.length > 0 && (
+        <Text style={styles.typing}>{typingText}</Text>
       )}
       {hint.length > 0 && <Text style={styles.hint}>{hint}</Text>}
 

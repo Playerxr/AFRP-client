@@ -33,6 +33,10 @@ export const fetchInitialSettings = (): AppThunk => async dispatch => {
     let resParse = parseINIString(res) as SettingType;
 
     const name = resParse.client?.name ?? '';
+    // Copie pour le filtre "ne pas se notifier soi-même" des push du chat
+    try {
+      await AsyncStorage.setItem('my_pseudo', name);
+    } catch (error) {}
     const fps = resParse.gui?.fps ?? 40;
     const chat = resParse.gui?.ChatMaxMessages ?? 6;
     const fpscounter = resParse.gui?.fpscounter ?? 0;
@@ -63,6 +67,12 @@ export const fetchInitialSettings = (): AppThunk => async dispatch => {
 export const fetchUserNameSetting =
   (userName: string): AppThunk =>
   async () => {
+    // Copie du pseudo en AsyncStorage : filtre "ne pas se notifier soi-même"
+    // des push du chat (lisible même quand l'app est en arrière-plan)
+    try {
+      await AsyncStorage.setItem('my_pseudo', userName);
+    } catch (error) {}
+
     try {
       const res = await RNFS.readFile(toPatch, 'utf8');
       let resParse = parseINIString(res) as { client: { name: string } };

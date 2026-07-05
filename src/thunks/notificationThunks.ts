@@ -7,6 +7,13 @@ export const appRegisterDeviceForRemoteMessages = (): AppThunk => async () => {
   await notifee.requestPermission();
   await messaging().registerDeviceForRemoteMessages();
 
+  // Push AFRP : annonces (tous) + chaque message du chat global (tous).
+  // La Cloud Function du launcher publie sur ces topics.
+  try {
+    await messaging().subscribeToTopic('annonces');
+    await messaging().subscribeToTopic('global_chat');
+  } catch (e) {}
+
   return await notifee.createChannel({
     id: PACKAGE_NAME + '-default',
     name: PROJECT_NAME + ' Chanel',
