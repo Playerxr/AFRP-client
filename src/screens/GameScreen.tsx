@@ -19,6 +19,7 @@ import { useAppSelector } from '../hooks/useAppSelector';
 import { selectSelectedServer } from '../selectors/appSelectors';
 import { selectServer } from '../selectors/serverSelectors';
 import { selectUserName } from '../selectors/settingSelectors';
+import { dbRef } from '../services/afrpDb';
 import { fetchServers } from '../thunks/serverThunks';
 import { fetchUserNameSetting } from '../thunks/settingsThunks';
 import GtaSetupModule from '../modules/GtaSetupModule';
@@ -41,9 +42,22 @@ export const GameScreen = React.memo(() => {
 
   const [pseudo, setPseudo] = useState(userName);
   const [needPseudo, setNeedPseudo] = useState(false);
+  const [annonce, setAnnonce] = useState('');
 
   useEffect(() => {
     dispatch(fetchServers());
+  }, []);
+
+  // Annonce du jour (app_config/annonce — publiée depuis l'Espace Staff,
+  // partagée avec l'app AFRP Launcher)
+  useEffect(() => {
+    try {
+      const r = dbRef('app_config/annonce');
+      const cb = r.on('value', snap => setAnnonce(String(snap.val() ?? '')));
+      return () => r.off('value', cb);
+    } catch (e) {
+      return undefined;
+    }
   }, []);
 
   useEffect(() => {
@@ -119,6 +133,13 @@ export const GameScreen = React.memo(() => {
 
         <Text style={styles.subtitle}>AFRIQUE FRANCOPHONE ROLEPLAY</Text>
         <View style={styles.divider} />
+
+        {/* Annonce du jour */}
+        {annonce.length > 0 && (
+          <View style={styles.annonce}>
+            <Text style={styles.annonceText}>📢  {annonce}</Text>
+          </View>
+        )}
 
         {/* Saisie pseudo */}
         <View style={styles.cardPseudo}>
@@ -249,6 +270,21 @@ const styles = StyleSheet.create({
     marginLeft: 22,
     marginTop: 8,
     borderRadius: 2,
+  },
+  annonce: {
+    backgroundColor: '#0d1a2a',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#00c88055',
+    marginHorizontal: 16,
+    marginTop: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  annonceText: {
+    color: '#35e8a9',
+    fontSize: 12,
+    fontFamily: 'sans-serif-condensed',
   },
   cardPseudo: {
     backgroundColor: '#0d1a2a',

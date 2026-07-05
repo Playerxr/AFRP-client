@@ -13,7 +13,9 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { setModeType } from '../actions/settingsActions';
 import { useAppDispatch } from '../hooks/useAppDispatch';
+import { ChatScreen } from '../screens/ChatScreen';
 import { DonateScreen } from '../screens/DonateScreen';
+import { SupportScreen } from '../screens/SupportScreen';
 import { ErrorScreen } from '../screens/ErrorScreen';
 import { GameScreen } from '../screens/GameScreen';
 import { InitiationScreen } from '../screens/InitiationScreen';
@@ -111,7 +113,7 @@ const Tabs = AnimatedTabBarNavigator();
 export const TabBarNavigation = React.memo(() => {
   return (
     <Tabs.Navigator
-      initialRouteName="Jouer"
+      initialRouteName="Accueil"
       backBehavior={'initialRoute'}
       tabBarOptions={{
         activeTintColor: '#ffffff',
@@ -125,6 +127,42 @@ export const TabBarNavigation = React.memo(() => {
         tabBarBackground: '#060d14',
       }}>
       <Tabs.Screen
+        name="Accueil"
+        component={GameScreen}
+        options={{
+          headerShown: false,
+          animation: 'fade',
+          headerTransparent: true,
+          tabBarIcon: ({ color, size }: any) => (
+            <Icons.PlaySvg width={size} height={size} fill={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="Chat"
+        component={ChatScreen}
+        options={{
+          headerShown: false,
+          animation: 'fade',
+          headerTransparent: true,
+          tabBarIcon: ({ color, size }: any) => (
+            <Icons.PeopleSvg width={size} height={size} fill={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="Support"
+        component={SupportScreen}
+        options={{
+          headerShown: false,
+          animation: 'fade',
+          headerTransparent: true,
+          tabBarIcon: ({ color, size }: any) => (
+            <Icons.RepairSvg width={size} height={size} fill={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="Boutique"
         component={DonateScreen}
         options={{
@@ -133,18 +171,6 @@ export const TabBarNavigation = React.memo(() => {
           headerTransparent: true,
           tabBarIcon: ({ color, size }: any) => (
             <Icons.WalletSvg width={size} height={size} fill={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="Jouer"
-        component={GameScreen}
-        options={{
-          headerShown: false,
-          animation: 'fade',
-          headerTransparent: true,
-          tabBarIcon: ({ color, size }: any) => (
-            <Icons.PlaySvg width={size} height={size} fill={color} />
           ),
         }}
       />

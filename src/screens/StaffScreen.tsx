@@ -1,6 +1,5 @@
-import { STAFF_PASSWORD } from '@env';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   ScrollView,
@@ -8,22 +7,63 @@ import {
   Switch,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import { setInitial } from '../actions/appActions';
 import { ButtonLauncher, MainContainer } from '../components';
+import { SupportThread } from '../components/Support/SupportThread';
 import { StaffConfig } from '../features/staffConfig';
 import { useAppDispatch } from '../hooks/useAppDispatch';
+import { dbRef, StaffRank, StaffSession } from '../services/afrpDb';
 import { fetchInitialApp } from '../thunks/appThunks';
 
 type StaffScreenType = NativeStackScreenProps<any>;
 
+// Durées VIP en minutes de jeu (mêmes valeurs que le launcher/serveur LVRP)
+const VIP_MENSUEL_MIN = 40000;
+const VIP_AVIE_MIN = 2000000000;
+
+const RANK_LABEL: Record<string, string> = {
+  fondateur: '👑 Fondateur',
+  admin: '🛡 Admin',
+  moderateur: '🔰 Modérateur',
+};
+
+type ConvoPreview = { id: string; pseudo: string; last: string; ts: number };
+
+/**
+ * Espace Staff — mêmes comptes et mêmes données que l'app AFRP Launcher :
+ * connexion email/mot de passe (comptes créés par le fondateur dans la
+ * console Firebase), rang lu dans staff_allowlist. En service, annonce,
+ * VIP (pending_vip_grants), support et outils fondateur.
+ */
 export const StaffScreen = React.memo(({ navigation }: StaffScreenType) => {
   const dispatch = useAppDispatch();
 
-  const [unlocked, setUnlocked] = useState(false);
+  // Connexion
+  const [rank, setRank] = useState<StaffRank>(StaffSession.rank);
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
 
+  // En service
+  const [enService, setEnService] = useState(false);
+
+  // Annonce (fondateur)
+  const [annonce, setAnnonce] = useState('');
+
+  // VIP
+  const [vipPseudo, setVipPseudo] = useState('');
+  const [vipRank, setVipRank] = useState(1);
+  const [vipCash, setVipCash] = useState('0');
+  const [vipAVie, setVipAVie] = useState(false);
+
+  // Support (boîte staff)
+  const [convos, setConvos] = useState<ConvoPreview[]>([]);
+  const [openConvo, setOpenConvo] = useState<string>('');
+
+  // Outils fondateur (config launcher locale)
   const [url, setUrl] = useState('');
   const [skip, setSkip] = useState(false);
   const [defaultUrl, setDefaultUrl] = useState('');
@@ -36,23 +76,147 @@ export const StaffScreen = React.memo(({ navigation }: StaffScreenType) => {
     })();
   }, []);
 
-  const onUnlock = () => {
-    if (password === STAFF_PASSWORD) {
-      setUnlocked(true);
-    } else {
-      Alert.alert('Espace Staff', 'Mot de passe incorrect.');
+  // Annonce actuelle (app_config/annonce)
+  useEffect(() => {
+    if (!rank) {
+      return undefined;
     }
-  };
+    try {
+      const r = dbRef('app_config/annonce');
+      const cb = r.on('value', snap => setAnnonce(String(snap.val() ?? '')));
+      return () => r.off('value', cb);
+    } catch (e) {
+      return undefined;
+    }
+  }, [rank]);
+
+  // Boîte support (liste des conversations) — lisible par le staff seulement
+  useEffect(() => {
+    if (!rank) {
+      return undefined;
+    }
+    try {
+      const r = dbRef('support_chats').limitToLast(30);
+      const cb = r.on('value', snap => {
+        const list: ConvoPreview[] = [];
+        snap.forEach(child => {
+          const msgs = child.child('messages').val() || {};
+          const arr = Object.values(msgs) as any[];
+          arr.sort((a, b) => (b?.timestamp ?? 0) - (a?.timestamp ?? 0));
+          const lastMsg = arr[0] || {};
+          const player =
+            arr.find(m => m?.sender === 'player') || ({} as any);
+          list.push({
+            id: child.key ?? '',
+            pseudo: player.pseudo ?? 'Joueur',
+            last: String(lastMsg.text ?? '').slice(0, 60),
+            ts: lastMsg.timestamp ?? 0,
+          });
+          return undefined;
+        });
+        list.sort((a, b) => b.ts - a.ts);
+        setConvos(list);
+      });
+      return () => r.off('value', cb);
+    } catch (e) {
+      return undefined;
+    }
+  }, [rank]);
+
+  const onLogin = useCallback(async () => {
+    if (busy) {
+      return;
+    }
+    setBusy(true);
+    try {
+      const r = await StaffSession.login(email, password);
+      setRank(r);
+    } catch (e: any) {
+      Alert.alert(
+        'Espace Staff',
+        e?.message?.includes('approuvé')
+          ? e.message
+          : 'Connexion refusée. Vérifie email/mot de passe (comptes créés par le fondateur).',
+      );
+    }
+    setBusy(false);
+  }, [email, password, busy]);
+
+  const onLogout = useCallback(async () => {
+    if (StaffSession.uid) {
+      try {
+        dbRef(`staff_online/${StaffSession.uid}`).remove();
+      } catch (e) {}
+    }
+    await StaffSession.logout();
+    setRank(null);
+    setEnService(false);
+    setOpenConvo('');
+  }, []);
+
+  const onToggleService = useCallback(
+    async (value: boolean) => {
+      setEnService(value);
+      if (!StaffSession.uid) {
+        return;
+      }
+      try {
+        const r = dbRef(`staff_online/${StaffSession.uid}`);
+        if (value) {
+          r.setValue({
+            pseudo: StaffSession.email ?? 'Staff',
+            rang: rank,
+            depuis: Date.now(),
+          });
+          r.onDisconnect().remove();
+        } else {
+          r.remove();
+        }
+      } catch (e) {}
+    },
+    [rank],
+  );
+
+  const onSaveAnnonce = useCallback(() => {
+    try {
+      dbRef('app_config/annonce').setValue(annonce.trim());
+      Alert.alert('Espace Staff', 'Annonce publiée chez tous les joueurs.');
+    } catch (e) {
+      Alert.alert('Espace Staff', "Échec (fondateur uniquement pour l'annonce).");
+    }
+  }, [annonce]);
+
+  const onGrantVip = useCallback(() => {
+    const p = vipPseudo.trim();
+    if (p.length < 3) {
+      Alert.alert('VIP', "Entre le pseudo exact du joueur (Prénom_Nom).");
+      return;
+    }
+    const cash = parseInt(vipCash, 10) || 0;
+    const minutes = vipAVie ? VIP_AVIE_MIN : VIP_MENSUEL_MIN;
+    // Format lu par le serveur LVRP : "Pseudo|Rang|Cash|VipMinutes"
+    const valeur = `${p}|${vipRank}|${cash}|${minutes}`;
+    try {
+      dbRef('pending_vip_grants').push(valeur);
+      Alert.alert(
+        'VIP',
+        `✅ VIP ${vipRank} en cours d'attribution à ${p} (appliqué à la prochaine synchro serveur, ~30 s).`,
+      );
+      setVipPseudo('');
+      setVipCash('0');
+    } catch (e) {
+      Alert.alert('VIP', 'Échec de l\'écriture (connexion ?).');
+    }
+  }, [vipPseudo, vipRank, vipCash, vipAVie]);
 
   const onSaveUrl = async () => {
     await StaffConfig.setDistributionUrl(url);
-    Alert.alert('Espace Staff', 'Lien d\'hébergement enregistré.');
+    Alert.alert('Espace Staff', "Lien d'hébergement enregistré.");
   };
 
   const onResetUrl = async () => {
     await StaffConfig.setDistributionUrl('');
-    const def = StaffConfig.getDefaultUrl();
-    setUrl(def);
+    setUrl(StaffConfig.getDefaultUrl());
     Alert.alert('Espace Staff', 'Lien réinitialisé (valeur du .env).');
   };
 
@@ -61,24 +225,35 @@ export const StaffScreen = React.memo(({ navigation }: StaffScreenType) => {
     await StaffConfig.setSkipDownload(value);
   };
 
-  // Relance le chargement complet (avec la nouvelle URL / le nouveau flag skip)
   const onReload = () => {
     dispatch(setInitial({ initial: false }));
     dispatch(fetchInitialApp());
     navigation.replace('Initiation');
   };
 
-  // Entre directement dans l'app sans rien télécharger (gestion rapide)
   const onEnterNow = () => {
     navigation.replace('Main');
   };
 
-  if (!unlocked) {
+  // ── Écran de connexion ──────────────────────────────────────────────
+  if (!rank) {
     return (
       <MainContainer image={false}>
         <View style={styles.gate}>
           <Text style={styles.title}>Espace Staff</Text>
-          <Text style={styles.subtitle}>Réservé au fondateur</Text>
+          <Text style={styles.subtitle}>
+            Comptes créés par le fondateur (console Firebase) — mêmes accès
+            que l'app AFRP Launcher.
+          </Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Email staff"
+            placeholderTextColor="rgba(255,255,255,0.5)"
+            autoCapitalize="none"
+            keyboardType="email-address"
+            value={email}
+            onChangeText={setEmail}
+          />
           <TextInput
             style={styles.input}
             placeholder="Mot de passe"
@@ -87,8 +262,11 @@ export const StaffScreen = React.memo(({ navigation }: StaffScreenType) => {
             value={password}
             onChangeText={setPassword}
           />
-          <ButtonLauncher btnWidth={'100%'} background={'#00c880'} onPress={onUnlock}>
-            Déverrouiller
+          <ButtonLauncher
+            btnWidth={'100%'}
+            background={'#00a86b'}
+            onPress={onLogin}>
+            {busy ? 'Connexion...' : 'Connexion staff'}
           </ButtonLauncher>
           <View style={{ height: 12 }} />
           <ButtonLauncher
@@ -102,59 +280,174 @@ export const StaffScreen = React.memo(({ navigation }: StaffScreenType) => {
     );
   }
 
+  // ── Fil support ouvert (staff) ─────────────────────────────────────
+  if (openConvo) {
+    return (
+      <MainContainer image={false}>
+        <View style={{ flex: 1, paddingTop: 8 }}>
+          <TouchableOpacity onPress={() => setOpenConvo('')}>
+            <Text style={styles.back}>‹ Retour aux conversations</Text>
+          </TouchableOpacity>
+          <SupportThread convoId={openConvo} role="staff" pseudo="Staff AFRP" />
+        </View>
+      </MainContainer>
+    );
+  }
+
+  // ── Espace staff connecté ──────────────────────────────────────────
   return (
     <MainContainer image={false}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>Espace Staff</Text>
-
-        {/* Lien d'hébergement */}
-        <Text style={styles.label}>Lien d'hébergement (distribution.json)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="https://votre-bucket.r2.dev/mobile/distribution.json"
-          placeholderTextColor="rgba(255,255,255,0.5)"
-          autoCapitalize="none"
-          autoCorrect={false}
-          keyboardType="url"
-          value={url}
-          onChangeText={setUrl}
-        />
-        <Text style={styles.hint}>Défaut (.env) : {defaultUrl}</Text>
-        <View style={styles.row}>
-          <ButtonLauncher btnWidth={'48%'} background={'#00c880'} onPress={onSaveUrl}>
-            Enregistrer
-          </ButtonLauncher>
-          <ButtonLauncher btnWidth={'48%'} background={'#16324a'} onPress={onResetUrl}>
-            Réinitialiser
-          </ButtonLauncher>
+        <View style={styles.headerRow}>
+          <Text style={styles.title}>Espace Staff</Text>
+          <Text style={styles.rank}>{RANK_LABEL[rank] ?? rank}</Text>
         </View>
 
-        {/* Skip download */}
+        {/* En service */}
         <View style={styles.switchRow}>
-          <Text style={styles.switchLabel}>
-            Entrer sans télécharger le modpack
-          </Text>
+          <Text style={styles.switchLabel}>En service (visible du staff)</Text>
           <Switch
-            value={skip}
-            onValueChange={onToggleSkip}
+            value={enService}
+            onValueChange={onToggleService}
             trackColor={{ false: '#16324a', true: '#00c880' }}
             thumbColor={'#ffffff'}
           />
         </View>
-        <Text style={styles.hint}>
-          Gestion rapide : saute les ~4 Go de cache au prochain chargement.
-        </Text>
 
-        {/* Actions */}
-        <View style={{ height: 18 }} />
-        <ButtonLauncher btnWidth={'100%'} background={'#00c880'} onPress={onEnterNow}>
-          Entrer dans l'app maintenant
+        {/* Annonce — fondateur */}
+        {rank === 'fondateur' && (
+          <>
+            <Text style={styles.label}>Annonce (accueil de tous les joueurs)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ex : Event ce soir 20h !"
+              placeholderTextColor="rgba(255,255,255,0.5)"
+              value={annonce}
+              onChangeText={setAnnonce}
+            />
+            <ButtonLauncher
+              btnWidth={'100%'}
+              background={'#00a86b'}
+              onPress={onSaveAnnonce}>
+              Publier l'annonce
+            </ButtonLauncher>
+          </>
+        )}
+
+        {/* VIP */}
+        <Text style={styles.label}>🎁 Donner VIP / Cash (serveur LVRP)</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Pseudo exact (Prénom_Nom)"
+          placeholderTextColor="rgba(255,255,255,0.5)"
+          autoCapitalize="none"
+          value={vipPseudo}
+          onChangeText={setVipPseudo}
+        />
+        <View style={styles.rankRow}>
+          {[1, 2, 3, 4].map(r => (
+            <TouchableOpacity
+              key={r}
+              style={[styles.rankChip, vipRank === r && styles.rankChipActive]}
+              onPress={() => setVipRank(r)}>
+              <Text
+                style={[
+                  styles.rankChipText,
+                  vipRank === r && styles.rankChipTextActive,
+                ]}>
+                VIP {r}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <TextInput
+          style={styles.input}
+          placeholder="Cash bonus (0 = aucun)"
+          placeholderTextColor="rgba(255,255,255,0.5)"
+          keyboardType="numeric"
+          value={vipCash}
+          onChangeText={setVipCash}
+        />
+        <View style={styles.switchRow}>
+          <Text style={styles.switchLabel}>VIP à vie (sinon mensuel)</Text>
+          <Switch
+            value={vipAVie}
+            onValueChange={setVipAVie}
+            trackColor={{ false: '#16324a', true: '#00c880' }}
+            thumbColor={'#ffffff'}
+          />
+        </View>
+        <ButtonLauncher btnWidth={'100%'} background={'#00a86b'} onPress={onGrantVip}>
+          Attribuer le VIP
         </ButtonLauncher>
-        <View style={{ height: 12 }} />
-        <ButtonLauncher btnWidth={'100%'} background={'#00c880'} onPress={onReload}>
-          Relancer le chargement
+
+        {/* Support — boîte staff */}
+        <Text style={styles.label}>📨 Conversations support ({convos.length})</Text>
+        {convos.length === 0 && (
+          <Text style={styles.hint}>Aucune conversation pour l'instant.</Text>
+        )}
+        {convos.map(c => (
+          <TouchableOpacity
+            key={c.id}
+            style={styles.convo}
+            onPress={() => setOpenConvo(c.id)}>
+            <Text style={styles.convoPseudo}>{c.pseudo}</Text>
+            <Text style={styles.convoLast} numberOfLines={1}>
+              {c.last || '(vide)'}
+            </Text>
+          </TouchableOpacity>
+        ))}
+
+        {/* Outils fondateur */}
+        {rank === 'fondateur' && (
+          <>
+            <Text style={styles.label}>⚙ Outils fondateur (ce téléphone)</Text>
+            <Text style={styles.hint}>Lien d'hébergement (distribution.json)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="https://...r2.dev/mobile/distribution.json"
+              placeholderTextColor="rgba(255,255,255,0.5)"
+              autoCapitalize="none"
+              keyboardType="url"
+              value={url}
+              onChangeText={setUrl}
+            />
+            <Text style={styles.hint}>Défaut (.env) : {defaultUrl}</Text>
+            <View style={styles.row}>
+              <ButtonLauncher btnWidth={'48%'} background={'#00a86b'} onPress={onSaveUrl}>
+                Enregistrer
+              </ButtonLauncher>
+              <ButtonLauncher btnWidth={'48%'} background={'#16324a'} onPress={onResetUrl}>
+                Réinitialiser
+              </ButtonLauncher>
+            </View>
+            <View style={styles.switchRow}>
+              <Text style={styles.switchLabel}>
+                Entrer sans télécharger le modpack
+              </Text>
+              <Switch
+                value={skip}
+                onValueChange={onToggleSkip}
+                trackColor={{ false: '#16324a', true: '#00c880' }}
+                thumbColor={'#ffffff'}
+              />
+            </View>
+            <View style={{ height: 10 }} />
+            <ButtonLauncher btnWidth={'100%'} background={'#00c880'} onPress={onEnterNow}>
+              Entrer dans l'app maintenant
+            </ButtonLauncher>
+            <View style={{ height: 10 }} />
+            <ButtonLauncher btnWidth={'100%'} background={'#16324a'} onPress={onReload}>
+              Relancer le chargement
+            </ButtonLauncher>
+          </>
+        )}
+
+        <View style={{ height: 16 }} />
+        <ButtonLauncher btnWidth={'100%'} background={'#5a2a2a'} onPress={onLogout}>
+          Déconnexion staff
         </ButtonLauncher>
-        <View style={{ height: 12 }} />
+        <View style={{ height: 10 }} />
         <ButtonLauncher
           btnWidth={'100%'}
           background={'#16324a'}
@@ -172,6 +465,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 8,
+    marginBottom: 6,
+  },
   title: {
     color: '#ffffff',
     fontSize: 24,
@@ -179,16 +479,27 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     marginTop: 8,
   },
+  rank: {
+    color: '#00c880',
+    fontSize: 13,
+    fontWeight: '700',
+  },
   subtitle: {
     color: 'rgba(255,255,255,0.6)',
-    fontSize: 14,
+    fontSize: 13,
     marginBottom: 20,
+  },
+  back: {
+    color: '#00c880',
+    fontSize: 14,
+    marginBottom: 8,
+    marginTop: 24,
   },
   label: {
     color: '#ffffff',
     fontSize: 14,
     fontWeight: '600',
-    marginTop: 18,
+    marginTop: 22,
     marginBottom: 8,
   },
   input: {
@@ -214,12 +525,54 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 24,
+    marginTop: 10,
   },
   switchLabel: {
     color: '#ffffff',
-    fontSize: 15,
+    fontSize: 14,
     flex: 1,
     paddingRight: 12,
+  },
+  rankRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  rankChip: {
+    flex: 1,
+    marginHorizontal: 3,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: '#16324a',
+    alignItems: 'center',
+  },
+  rankChipActive: {
+    backgroundColor: '#00a86b',
+  },
+  rankChipText: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  rankChipTextActive: {
+    color: '#ffffff',
+  },
+  convo: {
+    backgroundColor: '#0d1a2a',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#1e4a3a7f',
+    padding: 12,
+    marginBottom: 8,
+  },
+  convoPseudo: {
+    color: '#35e8a9',
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  convoLast: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 12,
   },
 });
