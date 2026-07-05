@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { APP_VERSION } from '@env';
 import LinearGradient from 'react-native-linear-gradient';
 import * as Progress from 'react-native-progress';
 import { setUserNameSetting } from '../actions/settingsActions';
@@ -264,6 +265,7 @@ export const GameScreen = React.memo(() => {
         <Text style={styles.serverLine}>
           {distServer?.address ?? '51.38.205.167:24328'}
           {'  •  '}SAMP {distServer?.sampVersion ?? '0.3.7'}
+          {'  •  '}v{APP_VERSION}
         </Text>
 
         {/* Actualités du projet */}
