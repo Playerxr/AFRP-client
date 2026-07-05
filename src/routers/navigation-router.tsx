@@ -140,7 +140,7 @@ export const TabBarNavigation = React.memo(() => {
         name="Jouer"
         component={GameScreen}
         options={{
-          headerShown: true,
+          headerShown: false,
           animation: 'fade',
           headerTransparent: true,
           tabBarIcon: ({ color, size }: any) => (
