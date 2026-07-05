@@ -34,7 +34,15 @@ Get-ChildItem -LiteralPath $root -Recurse -File | ForEach-Object {
   $size = $_.Length
   $total += $size
 
-  $entries.Add("    { ""id"": $id, ""name"": $nameJson, ""path"": $pathJson, ""bytes"": [$size], ""gpu"": """" }")
+  # Marquage GPU : chaque telephone ne telecharge que sa variante de textures.
+  # A = Adreno/Qualcomm (dxt), M = Mali (etc), PT = PowerVR (pvr), '' = universel
+  $n = $_.Name.ToLower()
+  $gpu = ''
+  if     ($n -match '\.dxt\.') { $gpu = 'A' }
+  elseif ($n -match '\.etc\.') { $gpu = 'M' }
+  elseif ($n -match '\.pvr\.') { $gpu = 'PT' }
+
+  $entries.Add("    { ""id"": $id, ""name"": $nameJson, ""path"": $pathJson, ""bytes"": [$size], ""gpu"": ""$gpu"" }")
   $id++
 }
 
