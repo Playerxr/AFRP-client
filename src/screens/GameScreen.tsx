@@ -1,3 +1,4 @@
+import { useNavigation } from '@react-navigation/native';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   Dimensions,
@@ -27,6 +28,7 @@ const { width } = Dimensions.get('window');
 // Accueil façon AFRP Launcher (hero GTA V : logo, scrim, titre, pseudo, JOUER)
 export const GameScreen = React.memo(() => {
   const dispatch = useAppDispatch();
+  const navigation = useNavigation<any>();
 
   const userName = useAppSelector(selectUserName);
   const selectedServer = useAppSelector(selectSelectedServer);
@@ -85,6 +87,14 @@ export const GameScreen = React.memo(() => {
             colors={['#0c142400', '#0c142466', '#0c1424']}
             style={styles.heroScrim}
           />
+
+          {/* Accès Espace Staff (chip, comme la cloche du launcher) */}
+          <TouchableOpacity
+            style={styles.chipStaff}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('Staff')}>
+            <Text style={styles.chipStaffText}>⚙</Text>
+          </TouchableOpacity>
 
           {/* Badge joueurs en ligne (façon GTA Online) */}
           <View style={styles.badgeOnline}>
@@ -168,6 +178,23 @@ const styles = StyleSheet.create({
   },
   heroScrim: {
     ...StyleSheet.absoluteFillObject,
+  },
+  chipStaff: {
+    position: 'absolute',
+    top: 44,
+    left: 14,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#060d14cc',
+    borderWidth: 1,
+    borderColor: '#1e4a3a7f',
+  },
+  chipStaffText: {
+    color: '#00c880',
+    fontSize: 15,
   },
   badgeOnline: {
     position: 'absolute',

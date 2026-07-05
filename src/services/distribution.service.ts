@@ -6,8 +6,13 @@ export const DistributionService = {
   async get() {
     // URL modifiable depuis l'Espace Staff (sinon valeur du .env)
     const url = await StaffConfig.getDistributionUrl();
+    // Anti-cache : sans ça le CDN (r2.dev) peut servir un distribution.json
+    // périmé (ex. l'ancienne version sans tags GPU -> l'app re-télécharge tout)
     const response = await axios
-      .get<DistributionResponseType>(url)
+      .get<DistributionResponseType>(url, {
+        params: { t: Date.now() },
+        headers: { 'Cache-Control': 'no-cache' },
+      })
       .then(res => res.data);
     return response;
   },
