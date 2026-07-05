@@ -108,6 +108,10 @@ export const SupportThread = React.memo((props: SupportThreadProps) => {
         inverted
         keyExtractor={item => item.id}
         renderItem={renderItem}
+        initialNumToRender={15}
+        maxToRenderPerBatch={10}
+        windowSize={7}
+        removeClippedSubviews
       />
       {hint.length > 0 && <Text style={styles.hint}>{hint}</Text>}
       <View style={styles.inputRow}>

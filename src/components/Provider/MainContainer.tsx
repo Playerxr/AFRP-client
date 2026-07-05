@@ -1,8 +1,7 @@
 import React from 'react';
-import { ImageBackground, View } from 'react-native';
+import { View } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { appBackground } from '../../assets/images';
 import { PADDING_HORIZONTAL, verticalScale } from '../../helpers/demensions';
 import { styles } from '../../styles/MainStyle';
 import { AlertProtectedFile } from '../AlertScreen/AlertProtectedFile';
@@ -27,27 +26,23 @@ export const MainContainer = React.memo((props: MainContainerType) => {
   return (
     <View style={[styles.container]}>
       {image && (
+        // Dégradé AFRP plein écran : remplace la photo floutée (blurRadius 20
+        // = décodage + surdessin coûteux sur les téléphones modestes)
         <LinearGradient
           style={[{ flex: 1 }]}
-          end={{ x: 0.0, y: 1.1 }}
-          colors={['#00000025', '#3a393e59']}>
-          <ImageBackground
-            imageStyle={{ opacity: 0.4 }}
-            blurRadius={20}
-            style={styles.imageBackground}
-            source={appBackground}>
-            <SafeAreaView style={{ flex: 1 }}>
-              <View style={styles.wrapper}>
-                <View
-                  style={[
-                    styles.body,
-                    { paddingHorizontal: verticalScale(paddingHorizontal) },
-                  ]}>
-                  <View style={styles.content}>{props.children}</View>
-                </View>
+          end={{ x: 0.0, y: 1.0 }}
+          colors={['#0d1a2a', '#0c1424']}>
+          <SafeAreaView style={{ flex: 1 }}>
+            <View style={styles.wrapper}>
+              <View
+                style={[
+                  styles.body,
+                  { paddingHorizontal: verticalScale(paddingHorizontal) },
+                ]}>
+                <View style={styles.content}>{props.children}</View>
               </View>
-            </SafeAreaView>
-          </ImageBackground>
+            </View>
+          </SafeAreaView>
         </LinearGradient>
       )}
       {!image && (

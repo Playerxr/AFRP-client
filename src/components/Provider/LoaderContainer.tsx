@@ -1,12 +1,9 @@
 import { LINK_FORUM_HELP } from '@env';
 import React from 'react';
-import { Image, ImageBackground, Linking, Text, View } from 'react-native';
+import { Image, Linking, Text, View } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import Snow from 'react-native-snowflakes';
-import {
-  appBackground,
-  appBackgroundNew,
-  appLogoImg,
-} from '../../assets/images';
+import { appLogoImg } from '../../assets/images';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import { selectModeType } from '../../selectors/settingSelectors';
 import { styles } from '../../styles/LoaderStyle';
@@ -24,11 +21,10 @@ export const LoaderContainer = React.memo((props: LoaderContainerType) => {
 
   return (
     <View style={styles.container}>
-      <ImageBackground
+      {/* Dégradé AFRP : plus fluide que la photo floutée (blur coûteux) */}
+      <LinearGradient
         style={styles.imageBackground}
-        blurRadius={isSnow === 1 ? 5 : 10}
-        imageStyle={{ opacity: 0.3 }}
-        source={isSnow === 1 ? appBackgroundNew : appBackground}>
+        colors={['#0d1a2a', '#0c1424']}>
         <View style={styles.wrapper}>
           <View style={styles.logoWrapper}>
             <Image style={styles.logo} source={appLogoImg} />
@@ -55,10 +51,10 @@ export const LoaderContainer = React.memo((props: LoaderContainerType) => {
             </Text>
           </View>
         </View>
-      </ImageBackground>
+      </LinearGradient>
       {isSnow === 1 && (
-        <Snow fullScreen snowflakesCount={100} fallSpeed="medium" />
-        // <Snow fullScreen snowflakesCount={100} fallSpeed="medium" />
+        // 40 flocons au lieu de 100 : l'animation JS pompait les frames
+        <Snow fullScreen snowflakesCount={40} fallSpeed="medium" />
       )}
     </View>
   );

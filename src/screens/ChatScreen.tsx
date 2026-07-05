@@ -19,6 +19,28 @@ type ChatMsg = {
   type: string;
 };
 
+// Ligne mémoïsée : seul un nouveau message re-rend sa ligne, pas toute la liste
+const MessageRow = React.memo(
+  ({ item, me }: { item: ChatMsg; me: string }) => {
+    const isMe = item.pseudo === me && me.length > 0;
+    const isAdmin = item.type === 'admin';
+    return (
+      <View style={[styles.msg, isMe && styles.msgMe]}>
+        <Text
+          style={[
+            styles.msgPseudo,
+            isAdmin && styles.msgPseudoAdmin,
+            isMe && styles.msgPseudoMe,
+          ]}>
+          {isAdmin ? `🛡 ${item.pseudo}` : item.pseudo}
+        </Text>
+        <Text style={styles.msgText}>{item.text}</Text>
+      </View>
+    );
+  },
+  (prev, next) => prev.item.id === next.item.id && prev.me === next.me,
+);
+
 // Chat global AFRP — même nœud RTDB que l'app AFRP Launcher (global_chat).
 export const ChatScreen = React.memo(() => {
   const userName = useAppSelector(selectUserName);
@@ -29,10 +51,10 @@ export const ChatScreen = React.memo(() => {
   const [hint, setHint] = useState('');
   const lastTypingWrite = useRef(0);
 
-  // Messages (200 derniers, comme le launcher)
+  // Messages (100 derniers : assez pour l'historique, 2x plus léger à parser)
   useEffect(() => {
     try {
-      const r = dbRef('global_chat/messages').limitToLast(200);
+      const r = dbRef('global_chat/messages').limitToLast(100);
       const cb = r.on('value', snap => {
         const list: ChatMsg[] = [];
         snap.forEach(child => {
@@ -130,23 +152,9 @@ export const ChatScreen = React.memo(() => {
   }, [text, userName]);
 
   const renderItem = useCallback(
-    ({ item }: { item: ChatMsg }) => {
-      const isMe = item.pseudo === userName.trim() && userName.trim().length > 0;
-      const isAdmin = item.type === 'admin';
-      return (
-        <View style={[styles.msg, isMe && styles.msgMe]}>
-          <Text
-            style={[
-              styles.msgPseudo,
-              isAdmin && styles.msgPseudoAdmin,
-              isMe && styles.msgPseudoMe,
-            ]}>
-            {isAdmin ? `🛡 ${item.pseudo}` : item.pseudo}
-          </Text>
-          <Text style={styles.msgText}>{item.text}</Text>
-        </View>
-      );
-    },
+    ({ item }: { item: ChatMsg }) => (
+      <MessageRow item={item} me={userName.trim()} />
+    ),
     [userName],
   );
 
@@ -164,6 +172,10 @@ export const ChatScreen = React.memo(() => {
         inverted
         keyExtractor={item => item.id}
         renderItem={renderItem}
+        initialNumToRender={15}
+        maxToRenderPerBatch={10}
+        windowSize={7}
+        removeClippedSubviews
       />
 
       {typing.length > 0 && (

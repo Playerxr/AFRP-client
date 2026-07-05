@@ -74,8 +74,10 @@ export const NavigationRouter = React.memo(() => {
                 headerTransparent: true,
                 gestureEnabled: false,
                 animationTypeForReplace: 'push',
-                animationDuration: 350,
-                animation: 'flip',
+                // fondu court : le "flip" 3D de 350ms saccadait sur les
+                // téléphones modestes
+                animationDuration: 200,
+                animation: 'fade',
               }}
               initialRouteName={isModeType ? 'Initiation' : 'ModeScreen'}>
               <Stack.Screen name="Main" component={TabBarNavigation} />

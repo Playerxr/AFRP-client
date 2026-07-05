@@ -43,9 +43,14 @@ export const SettingsScreen = React.memo(() => {
   const dispatch = useAppDispatch();
   const navigation = useNavigation<any>();
 
-  const onEndEditingUserName = React.useCallback((value: string) => {
-    dispatch(fetchUserNameSetting(value));
+  // Redux à chaque frappe (léger), écriture du settings.ini seulement à la
+  // fin de la saisie (l'écriture fichier par lettre faisait laguer le clavier)
+  const onChangeUserName = React.useCallback((value: string) => {
     dispatch(setUserNameSetting({ userName: value }));
+  }, []);
+
+  const onEndEditingUserName = React.useCallback((e: any) => {
+    dispatch(fetchUserNameSetting(e?.nativeEvent?.text ?? ''));
   }, []);
 
   const onValueChangeFps = React.useCallback((e: number) => {
@@ -112,7 +117,8 @@ export const SettingsScreen = React.memo(() => {
                   Icon={Icons.UnionSvg}
                   title={'Ton pseudo'}
                   value={settings.userName}
-                  onChangeText={onEndEditingUserName}
+                  onChangeText={onChangeUserName}
+                  onEndEditing={onEndEditingUserName}
                   placeholder={'Ex : Don_Corleone'}
                 />
               </View>

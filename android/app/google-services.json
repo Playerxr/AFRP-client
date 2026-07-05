@@ -10,10 +10,15 @@
       "client_info": {
         "mobilesdk_app_id": "1:78435413295:android:8448c0f62a86a5c1db85da",
         "android_client_info": {
-          "package_name": "com.touch.mobile.dark"
+          "package_name": "com.afrp.launcher"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "78435413295-3om4t17tpldfvcd6kt38fbahpfu3lnsi.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCtIKYbN4dcrQr4VmhtumN_q-xDBmLZw40"
@@ -21,7 +26,41 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "78435413295-3om4t17tpldfvcd6kt38fbahpfu3lnsi.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:78435413295:android:6cbf76073945b944db85da",
+        "android_client_info": {
+          "package_name": "com.touch.mobile.dark"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "78435413295-3om4t17tpldfvcd6kt38fbahpfu3lnsi.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCtIKYbN4dcrQr4VmhtumN_q-xDBmLZw40"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "78435413295-3om4t17tpldfvcd6kt38fbahpfu3lnsi.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
