@@ -168,7 +168,7 @@ export const TabBarNavigation = React.memo(() => {
         name="Boutique"
         component={DonateScreen}
         options={{
-          headerShown: true,
+          headerShown: false,
           animation: 'fade',
           headerTransparent: true,
           tabBarIcon: ({ color, size }: any) => (

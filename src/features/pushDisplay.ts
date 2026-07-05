@@ -33,6 +33,13 @@ export async function showAfrpNotification(
         canal === 'afrp_chat'
           ? AndroidImportance.DEFAULT
           : AndroidImportance.HIGH,
+      // sons repris du launcher AFRP (res/raw)
+      sound:
+        canal === 'afrp_support'
+          ? 'notif_staff'
+          : canal === 'afrp_annonces'
+          ? 'notif_annonce'
+          : undefined,
     });
 
     await notifee.displayNotification({
