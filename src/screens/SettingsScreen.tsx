@@ -97,7 +97,7 @@ export const SettingsScreen = React.memo(() => {
     <>
       {isLoading && (
         <View style={styles.loading}>
-          <ActivityIndicator size="large" color={'#228dff'} />
+          <ActivityIndicator size="large" color={'#00c880'} />
         </View>
       )}
       <MainContainer>
@@ -159,7 +159,7 @@ export const SettingsScreen = React.memo(() => {
               <View style={{ marginTop: 18 }}>
                 <ButtonLauncher
                   btnWidth={'100%'}
-                  background={'#3a3f52'}
+                  background={'#16324a'}
                   onPress={() => navigation.navigate('Staff')}>
                   Espace Staff
                 </ButtonLauncher>

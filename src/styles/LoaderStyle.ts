@@ -72,7 +72,7 @@ export const styles = StyleSheet.create({
     width: verticalScale(70),
   },
   accent: {
-    color: '#5476db',
+    color: '#00c880',
   },
   link: {
     textDecorationLine: 'underline',
@@ -111,7 +111,7 @@ export const styles = StyleSheet.create({
   },
   progressPercent: {
     fontWeight: '700',
-    color: '#5476db',
+    color: '#00c880',
     textAlign: 'center',
     marginTop: verticalScale(15),
     fontSize: scale(24),

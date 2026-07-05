@@ -32,7 +32,7 @@ export const AlertLauncher = React.memo((props: AwesomeAlertProps) => {
       }}
       actionContainerStyle={{}}
       cancelButtonStyle={{
-        backgroundColor: '#6b8afd',
+        backgroundColor: '#00c880',
         flex: 100,
         borderRadius: scale(12),
       }}
@@ -43,7 +43,7 @@ export const AlertLauncher = React.memo((props: AwesomeAlertProps) => {
         textAlign: 'center',
       }}
       confirmButtonStyle={{
-        backgroundColor: '#6b8afd',
+        backgroundColor: '#00c880',
         flex: 100,
         borderRadius: scale(12),
       }}

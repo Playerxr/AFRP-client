@@ -63,7 +63,7 @@ export const styles = StyleSheet.create({
     borderRadius: scale(80) / 2,
 
     borderWidth: verticalScale(2),
-    borderColor: '#8ab5f3',
+    borderColor: '#35e8a9',
   },
   animsEmpty: {
     width: verticalScale(100),
@@ -77,7 +77,7 @@ export const styles = StyleSheet.create({
     marginTop: verticalScale(15),
   },
   subtitle: {
-    color: '#8ab5f3',
+    color: '#35e8a9',
     fontSize: scale(15),
     fontWeight: '600',
     textAlign: 'center',

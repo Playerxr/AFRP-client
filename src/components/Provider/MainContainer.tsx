@@ -54,7 +54,7 @@ export const MainContainer = React.memo((props: MainContainerType) => {
         <LinearGradient
           style={[{ flex: 1 }]}
           end={{ x: 0.0, y: 1.0 }}
-          colors={['#403E48', '#141318']}>
+          colors={['#0d1a2a', '#0c1424']}>
           <SafeAreaView style={{ flex: 1 }}>
             <View style={styles.wrapper}>
               <View style={styles.body}>

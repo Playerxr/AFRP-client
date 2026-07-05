@@ -31,14 +31,14 @@ export const ErrorScreen = React.memo(
         <View style={styles.buttons}>
           <ButtonLauncher
             btnWidth={'100%'}
-            background={'#5476db'}
+            background={'#00c880'}
             onPress={reloadHandler}>
             Réessayer
           </ButtonLauncher>
           <View style={{ height: 12 }} />
           <ButtonLauncher
             btnWidth={'100%'}
-            background={'#3a3f52'}
+            background={'#16324a'}
             onPress={() => navigation.navigate('Staff')}>
             Espace Staff
           </ButtonLauncher>

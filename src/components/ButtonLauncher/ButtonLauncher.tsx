@@ -26,7 +26,7 @@ export const ButtonLauncher = React.memo((props: ButtonLauncherType) => {
     IconLeft,
     IconRight,
     btnWidth = 'auto',
-    background = '#a568dc',
+    background = '#00c880',
   } = props;
 
   const display = { display: hide ? 'none' : 'flex' } as ViewStyle;

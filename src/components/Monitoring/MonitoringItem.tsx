@@ -40,7 +40,7 @@ export const MonitoringItem = React.memo(
       <TouchableOpacity onPress={selectServerHandler} style={styles.body}>
         <LinearGradient
           start={{ x: 0.0, y: 0.0 }}
-          colors={['#414673c9', '#262839']}
+          colors={['#0f2c42c9', '#0d1a2a']}
           style={styles.item}>
           <View style={styles.content}>
             <View style={styles.anims}>
@@ -56,7 +56,7 @@ export const MonitoringItem = React.memo(
               <Text style={styles.subtitle}>{props.name}</Text>
               <View style={styles.static}>
                 {props.loading && (
-                  <ActivityIndicator size="small" color="#719ff0" />
+                  <ActivityIndicator size="small" color="#00c880" />
                 )}
                 {!props.loading && props.status && (
                   <>

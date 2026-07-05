@@ -61,8 +61,8 @@ export const UpdateScreen = React.memo(() => {
             animated={true}
             useNativeDriver={true}
             borderWidth={0}
-            color={'#647fd3'}
-            unfilledColor={'#2f3545'}
+            color={'#00c880'}
+            unfilledColor={'#12283c'}
             borderRadius={20}
             height={10}
             width={width - verticalScale(40)}

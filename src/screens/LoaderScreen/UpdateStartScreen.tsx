@@ -37,7 +37,7 @@ export const UpdateStartScreen = React.memo(
         <View style={styles.buttons}>
           <ButtonLauncher
             btnWidth={'100%'}
-            background={'#5476db'}
+            background={'#00c880'}
             IconLeft={DownloadSvg}
             onPress={onPressDownload}>
             Mettre à jour

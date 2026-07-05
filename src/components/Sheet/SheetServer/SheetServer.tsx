@@ -85,7 +85,7 @@ export const SheetServerComponent = React.memo(
           </View>
           <View style={styles.online}>
             {server?.loading && (
-              <ActivityIndicator size="small" color="#719ff0" />
+              <ActivityIndicator size="small" color="#00c880" />
             )}
             {!server?.loading && server?.status && (
               <>

@@ -32,9 +32,9 @@ export const RangeLauncher = React.memo((props: RangeLauncherType) => {
             minimumValue={minimumValue} // Minimum value
             maximumValue={maximumValue} // Maximum value
             step={1} // The step for the slider (0 means that the slider will handle any decimal value within the range [min, max])
-            minimumTrackTintColor={'#575c9b7f'} // The track color before the current value
+            minimumTrackTintColor={'#1e4a3a7f'} // The track color before the current value
             maximumTrackTintColor={'#6570937f'} // The track color after the current value
-            thumbTintColor={'#6b8afd'} // The color of the slider's thumb
+            thumbTintColor={'#00c880'} // The color of the slider's thumb
             thumbStyle={{ paddingVertical: 10 }} // Override the thumb's style
             trackStyle={undefined} // Override the tracks' style
             minTrackStyle={undefined} // Override the tracks' style for the minimum range

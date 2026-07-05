@@ -21,10 +21,10 @@ export const SwitchLauncher = React.memo((props: SwitchLauncherType) => {
         switchLeftPx={2.4}
         switchRightPx={2.4}
         switchWidthMultiplier={2.1}
-        backgroundActive={'#575c9b7f'}
-        backgroundInactive={'#575c9b7f'}
-        circleActiveColor={'#6b8afd'}
-        circleInActiveColor={'#b6c4ee7f'}
+        backgroundActive={'#1e4a3a7f'}
+        backgroundInactive={'#1e4a3a7f'}
+        circleActiveColor={'#00c880'}
+        circleInActiveColor={'#5a8a7ab0'}
         circleBorderWidth={0}
         renderActiveText={false}
         renderInActiveText={false}

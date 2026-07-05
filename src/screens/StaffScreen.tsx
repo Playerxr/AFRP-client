@@ -87,13 +87,13 @@ export const StaffScreen = React.memo(({ navigation }: StaffScreenType) => {
             value={password}
             onChangeText={setPassword}
           />
-          <ButtonLauncher btnWidth={'100%'} background={'#5476db'} onPress={onUnlock}>
+          <ButtonLauncher btnWidth={'100%'} background={'#00c880'} onPress={onUnlock}>
             Déverrouiller
           </ButtonLauncher>
           <View style={{ height: 12 }} />
           <ButtonLauncher
             btnWidth={'100%'}
-            background={'#3a3f52'}
+            background={'#16324a'}
             onPress={() => navigation.goBack()}>
             Retour
           </ButtonLauncher>
@@ -121,10 +121,10 @@ export const StaffScreen = React.memo(({ navigation }: StaffScreenType) => {
         />
         <Text style={styles.hint}>Défaut (.env) : {defaultUrl}</Text>
         <View style={styles.row}>
-          <ButtonLauncher btnWidth={'48%'} background={'#5476db'} onPress={onSaveUrl}>
+          <ButtonLauncher btnWidth={'48%'} background={'#00c880'} onPress={onSaveUrl}>
             Enregistrer
           </ButtonLauncher>
-          <ButtonLauncher btnWidth={'48%'} background={'#3a3f52'} onPress={onResetUrl}>
+          <ButtonLauncher btnWidth={'48%'} background={'#16324a'} onPress={onResetUrl}>
             Réinitialiser
           </ButtonLauncher>
         </View>
@@ -137,7 +137,7 @@ export const StaffScreen = React.memo(({ navigation }: StaffScreenType) => {
           <Switch
             value={skip}
             onValueChange={onToggleSkip}
-            trackColor={{ false: '#3a3f52', true: '#5476db' }}
+            trackColor={{ false: '#16324a', true: '#00c880' }}
             thumbColor={'#ffffff'}
           />
         </View>
@@ -147,17 +147,17 @@ export const StaffScreen = React.memo(({ navigation }: StaffScreenType) => {
 
         {/* Actions */}
         <View style={{ height: 18 }} />
-        <ButtonLauncher btnWidth={'100%'} background={'#4caf78'} onPress={onEnterNow}>
+        <ButtonLauncher btnWidth={'100%'} background={'#00c880'} onPress={onEnterNow}>
           Entrer dans l'app maintenant
         </ButtonLauncher>
         <View style={{ height: 12 }} />
-        <ButtonLauncher btnWidth={'100%'} background={'#5476db'} onPress={onReload}>
+        <ButtonLauncher btnWidth={'100%'} background={'#00c880'} onPress={onReload}>
           Relancer le chargement
         </ButtonLauncher>
         <View style={{ height: 12 }} />
         <ButtonLauncher
           btnWidth={'100%'}
-          background={'#3a3f52'}
+          background={'#16324a'}
           onPress={() => navigation.goBack()}>
           Retour
         </ButtonLauncher>

@@ -25,7 +25,7 @@ export const LauncherUpdateScreen = React.memo(() => {
       </Text>
       <View style={styles.buttons}>
         <ButtonLauncher
-          background={'#5476db'}
+          background={'#00c880'}
           btnWidth={'100%'}
           IconLeft={InstallSvg}
           onPress={installHandler}>

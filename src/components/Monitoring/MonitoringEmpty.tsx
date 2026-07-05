@@ -10,7 +10,7 @@ export const MonitoringEmpty = React.memo(() => {
     <TouchableOpacity onPress={() => {}} style={styles.body}>
       <LinearGradient
         start={{ x: 0.0, y: 0.0 }}
-        colors={['#414673c9', '#262839']}
+        colors={['#0f2c42c9', '#0d1a2a']}
         style={styles.item}>
         <View style={styles.content}>
           <View style={styles.anims}>

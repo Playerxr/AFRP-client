@@ -115,14 +115,14 @@ export const TabBarNavigation = React.memo(() => {
       backBehavior={'initialRoute'}
       tabBarOptions={{
         activeTintColor: '#ffffff',
-        inactiveTintColor: '#b6c4ee7f',
-        activeBackgroundColor: '#6b8afd',
+        inactiveTintColor: '#5a8a7ab0',
+        activeBackgroundColor: '#00c880',
       }}
       appearance={{
         shadow: false,
         floating: true,
         dotSize: DotSize.MEDIUM,
-        tabBarBackground: '#212231',
+        tabBarBackground: '#060d14',
       }}>
       <Tabs.Screen
         name="Boutique"

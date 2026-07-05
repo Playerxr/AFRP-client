@@ -14,7 +14,7 @@ export const styles = StyleSheet.create({
     height: verticalScale(50),
     borderRadius: verticalScale(50),
     borderWidth: verticalScale(2),
-    borderColor: '#8ab5f3',
+    borderColor: '#35e8a9',
   },
 
   headerAnim: {},

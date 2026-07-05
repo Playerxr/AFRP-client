@@ -59,7 +59,7 @@ export const Cards = () => {
             {articles.map((_, index) => {
               return (
                 <PaginationItem
-                  backgroundColor={'#6b8afd'}
+                  backgroundColor={'#00c880'}
                   animValue={progressValue}
                   index={index}
                   key={index}

@@ -36,7 +36,7 @@ export const DownloadStartScreen = React.memo(
         <View style={styles.buttons}>
           <ButtonLauncher
             btnWidth={'100%'}
-            background={'#5476db'}
+            background={'#00c880'}
             IconLeft={DownloadSvg}
             onPress={onPressDownload}>
             Télécharger le jeu
@@ -44,7 +44,7 @@ export const DownloadStartScreen = React.memo(
           <View style={{ height: 12 }} />
           <ButtonLauncher
             btnWidth={'100%'}
-            background={'#3a3f52'}
+            background={'#16324a'}
             onPress={() => navigation.navigate('Staff')}>
             Espace Staff
           </ButtonLauncher>

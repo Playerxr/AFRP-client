@@ -86,7 +86,7 @@ const LauncherDownload = (props: { onPressUpdateHandler: () => void }) => {
       <View style={styles.buttons}>
         <ButtonLauncher
           btnWidth={'100%'}
-          background={'#5476db'}
+          background={'#00c880'}
           IconLeft={downloadSvg}
           onPress={props.onPressUpdateHandler}>
           Télécharger
@@ -102,7 +102,7 @@ const LauncherDownloadError = (props: { onPressUpdateHandler: () => void }) => {
       <Text style={styles.alert}>Une erreur est survenue pendant le téléchargement</Text>
       <View style={styles.buttons}>
         <ButtonLauncher
-          background={'#5476db'}
+          background={'#00c880'}
           btnWidth={'100%'}
           IconLeft={ReloadSvg}
           onPress={props.onPressUpdateHandler}>
@@ -133,8 +133,8 @@ const LauncherDownloadStart = (props: {
         animated={true}
         useNativeDriver={true}
         borderWidth={0}
-        color={'#647fd3'}
-        unfilledColor={'#2f3545'}
+        color={'#00c880'}
+        unfilledColor={'#12283c'}
         borderRadius={20}
         height={10}
         width={width - verticalScale(40)}
