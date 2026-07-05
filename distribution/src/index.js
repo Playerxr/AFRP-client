@@ -23,11 +23,11 @@ const packageName = 'com.touch.mobile.dark';
 // Format bucket public managé : https://pub-<hash>.r2.dev
 // (ou un domaine perso branché sur R2). Les fichiers du cache doivent être
 // accessibles en GET statique à <cdnCache>/<sous-dossier>/<fichier>.
-const cdnCache = 'https://VOTRE-BUCKET.r2.dev/mobile/cache';
-const cdnLauncher = 'https://VOTRE-BUCKET.r2.dev/mobile/launcher';
+const cdnCache = 'https://pub-966b7e566edc48fa911560ca57a5b415.r2.dev/mobile/cache';
+const cdnLauncher = 'https://pub-966b7e566edc48fa911560ca57a5b415.r2.dev/mobile/launcher';
 
 const appVersion = '1.0.0';
-const rss = 'https://VOTRE-BUCKET.r2.dev/api/launcher/news';
+const rss = 'https://pub-966b7e566edc48fa911560ca57a5b415.r2.dev/api/launcher/news';
 
 const filesContinue = ['settings.ini', 'gta_sa.set', 'svconfig.ini'];
 const filesIgnore = ['samp_log.txt', 'crash_log.log', 'gtasatelem.set'];
@@ -189,7 +189,7 @@ return new Promise(async () => {
 						id: 1,
 						show: true,
 						version: '1.0',
-						icon: 'https://VOTRE-BUCKET.r2.dev/mobile/image/afrp_icon.png',
+						icon: 'https://pub-966b7e566edc48fa911560ca57a5b415.r2.dev/mobile/image/afrp_icon.png',
 						events: [
 							{
 								title: 'Bienvenue',
