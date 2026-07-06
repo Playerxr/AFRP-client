@@ -85,12 +85,13 @@ export const FileValidate = {
     bytes,
     filesContinue,
   }: IsValidCacheType) => {
-    if (
-      gpuCache.length > 0 &&
-      gpuCache.split('').some(element => element[0] === gpuSystem[0]) === false
-    ) {
-      return 'continue';
-    }
+    // Filtre GPU DÉSACTIVÉ : on télécharge TOUTES les variantes de textures
+    // (dxt/etc/pvr). La détection GPU côté JS ne correspondait pas toujours à
+    // celle du moteur natif -> variante manquante -> écran blanc/noir. En
+    // téléchargeant tout, le moteur trouve toujours sa variante. (gpuCache/
+    // gpuSystem conservés dans la signature mais non filtrés.)
+    void gpuCache;
+    void gpuSystem;
 
     try {
       const toPatch = FilePath.getPathDirCache();
@@ -112,13 +113,9 @@ export const FileValidate = {
     gpuCache: string;
     gpuSystem: string;
   }) => {
-    if (
-      gpuCache.length > 0 &&
-      gpuCache.split('').some(element => element[0] === gpuSystem[0]) === false
-    ) {
-      return false;
-    }
-
+    // Filtre GPU désactivé (voir isValidCache) : toutes les variantes sont valides
+    void gpuCache;
+    void gpuSystem;
     return true;
   },
 };
