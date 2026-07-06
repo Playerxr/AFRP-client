@@ -60,6 +60,9 @@ export const GameScreen = React.memo(() => {
   const needCount = useAppSelector(state => state.loader.needDownload.length);
   const compare = useAppSelector(selectCompare);
   const download = useAppSelector(selectLoaderDownload);
+  // flag global : true tant qu'un DL tourne (y compris en arrière-plan) → au
+  // retour dans l'app on affiche la progression sans relancer de 2e DL
+  const downloadingGlobal = useAppSelector(state => state.loader.downloading);
   const { fetchPermision } = usePermisionFile();
   const { fetchSpace } = useSpaceDownlload();
 
@@ -143,7 +146,12 @@ export const GameScreen = React.memo(() => {
   // Bouton principal :
   //  - fichiers manquants -> télécharge (jauge intégrée), puis lance
   //  - tout est là         -> lance le jeu directement
+  const isDownloading = downloading || downloadingGlobal;
+
   const onPressAction = useCallback(async () => {
+    if (isDownloading) {
+      return; // déjà en cours (peut-être en arrière-plan)
+    }
     if (pseudo.trim().length < 1) {
       setNeedPseudo(true);
       return;
@@ -170,9 +178,9 @@ export const GameScreen = React.memo(() => {
       voiceChat: !liveMode,
     });
     await GtaSetupModule.startGame();
-  }, [pseudo, needCount, liveMode]);
+  }, [pseudo, needCount, liveMode, isDownloading]);
 
-  const btnLabel = downloading
+  const btnLabel = isDownloading
     ? `TÉLÉCHARGEMENT ${percent}%`
     : needCount > 0
     ? dlError
@@ -182,7 +190,7 @@ export const GameScreen = React.memo(() => {
 
   const statusText = needPseudo
     ? 'Entre ton pseudo pour jouer'
-    : downloading
+    : isDownloading
     ? `${download.fileName ?? ''}  [${formatSizeUnits(
         download.downloadBytes || 0,
       )} / ${formatSizeUnits(compare.needDownloadsCacheBytes || 0)}]`

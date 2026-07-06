@@ -5,6 +5,7 @@ import {
   CacheType,
   setCacheReject,
   setCompare,
+  setDownloading,
   setDownloadLoader,
   setSuccessDownload,
 } from '../actions/loaderActions';
@@ -84,6 +85,11 @@ export const compareFileRecursion =
 export const fetchStartDownload =
   (opts?: { silent?: boolean }): AppThunk =>
   async (dispatch, state) => {
+  // déjà en cours (ex : relancé depuis l'accueil rouvert) → on ne double pas
+  if (state().loader.downloading) {
+    return;
+  }
+
   const { cdnCache } = state().distribution;
   const { rejectCount } = state().loader.compare;
   const { needDownload } = state().loader;
@@ -92,6 +98,7 @@ export const fetchStartDownload =
   let numberOfDownloads = 0;
   let downloadBytes = 0;
 
+  dispatch(setDownloading({ downloading: true }));
   dispatch(createPushNotificationLoader());
 
   dispatch(
@@ -172,6 +179,7 @@ export const fetchStartDownload =
         dispatch(setCacheReject(id));
       }
     } catch (error) {
+      dispatch(setDownloading({ downloading: false }));
       dispatch(onUploadTaskEventLoader({ status: 'complete' }));
       // silent = téléchargement lancé depuis l'accueil : on reste sur place,
       // l'accueil détecte l'échec (needDownload non vidé) et propose "Réessayer"
@@ -182,6 +190,7 @@ export const fetchStartDownload =
     }
   }
 
+  dispatch(setDownloading({ downloading: false }));
   dispatch(onUploadTaskEventLoader({ status: 'complete' }));
   dispatch(fetchIsDownloadSuccess());
   if (opts?.silent) {

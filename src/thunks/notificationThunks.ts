@@ -34,12 +34,15 @@ export const onUploadTaskEventLoader =
   (event): AppThunk =>
   async () => {
     if (event.status === 'download') {
+      // asForegroundService => Android garde le processus vivant même app
+      // fermée/en arrière-plan → le téléchargement continue.
       await notifee.displayNotification({
         id: PACKAGE_NAME + '-notification',
         body: `${event.file} [${event.sizeFile} sur ${event.currentFile}]`,
         title: 'Téléchargement des fichiers du jeu...',
         android: {
           channelId: PACKAGE_NAME + '-notification',
+          asForegroundService: true,
           ongoing: true,
           onlyAlertOnce: true,
           showTimestamp: true,
@@ -53,25 +56,27 @@ export const onUploadTaskEventLoader =
     }
 
     if (event.status === 'complete') {
+      // Fin : on arrête le service de premier plan puis on affiche une notif
+      // normale (dismissible) "terminé".
+      try {
+        await notifee.stopForegroundService();
+      } catch (e) {}
       await notifee.displayNotification({
-        id: PACKAGE_NAME + '-notification',
-        body: ' ',
-        title: 'Téléchargement terminé',
+        id: PACKAGE_NAME + '-done',
+        title: 'AFRP',
+        body: 'Téléchargement terminé — prêt à jouer !',
         android: {
           channelId: PACKAGE_NAME + '-notification',
-          ongoing: true,
-          onlyAlertOnce: false,
-          showTimestamp: true,
-          colorized: true,
-          progress: {
-            max: 100,
-            current: 100,
-          },
+          pressAction: { id: 'default' },
+          smallIcon: 'ic_launcher',
         },
       });
     }
 
     if (event.status === 'cancel') {
+      try {
+        await notifee.stopForegroundService();
+      } catch (e) {}
       await notifee.cancelNotification(PACKAGE_NAME + '-notification');
     }
   };

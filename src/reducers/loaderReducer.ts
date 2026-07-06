@@ -43,6 +43,10 @@ const loaderInitState = {
   actionLauncher: '',
 
   loadingPercent: 0,
+
+  // true tant qu'un téléchargement tourne (y compris en arrière-plan) → évite
+  // de relancer un 2e téléchargement si le joueur rouvre l'app
+  downloading: false,
 };
 
 export type LoaderInitStateType = typeof loaderInitState;
@@ -54,6 +58,7 @@ export const loaderReducer = (
   switch (action.type) {
     case 'SET_LAUNCHER_MESSAGE':
     case 'SET_LOADING_PERCEN':
+    case 'SET_DOWNLOADING':
     case 'SET_SUCCESS_DOWNLOAD': {
       return { ...state, ...action.payload };
     }

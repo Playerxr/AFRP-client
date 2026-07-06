@@ -27,12 +27,16 @@ export const setLauncherMessage = (payload: {
 export const setLoadingPercent = (payload: { loadingPercent: number }) =>
   ({ type: 'SET_LOADING_PERCEN', payload } as const);
 
+export const setDownloading = (payload: { downloading: boolean }) =>
+  ({ type: 'SET_DOWNLOADING', payload } as const);
+
 type SetCacheRejectActionType = ReturnType<typeof setCacheReject>;
 type SetLauncherMessageActionType = ReturnType<typeof setLauncherMessage>;
 type SetLoadingPercentActionType = ReturnType<typeof setLoadingPercent>;
 type SetSuccessDownloadActionType = ReturnType<typeof setSuccessDownload>;
 type SetCompareActionType = ReturnType<typeof setCompare>;
 type SetDownloadLoaderActionType = ReturnType<typeof setDownloadLoader>;
+type SetDownloadingActionType = ReturnType<typeof setDownloading>;
 
 export type LoaderActionsType =
   | SetCacheRejectActionType
@@ -40,7 +44,8 @@ export type LoaderActionsType =
   | SetLoadingPercentActionType
   | SetSuccessDownloadActionType
   | SetCompareActionType
-  | SetDownloadLoaderActionType;
+  | SetDownloadLoaderActionType
+  | SetDownloadingActionType;
 
 export type CacheType = {
   id: number;

@@ -22,10 +22,10 @@ jobs:
       - name: Télécharger le code
         uses: actions/checkout@v4
 
-      - name: Node 16 (requis par React Native 0.70)
+      - name: Node 24 (demandé — plus récent)
         uses: actions/setup-node@v4
         with:
-          node-version: '16'
+          node-version: '24'
 
       - name: Java 11 (Android Gradle)
         uses: actions/setup-java@v4

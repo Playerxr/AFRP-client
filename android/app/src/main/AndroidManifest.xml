@@ -14,6 +14,10 @@
     <!-- Android 13+ (Tiramisu → Android 16) : les notifications exigent cette
          permission runtime, sinon chat/annonces/support ne s'affichent pas. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- Service de premier plan : téléchargement du cache qui continue même
+         quand le joueur quitte l'app. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
 
     <queries>
         <intent>
