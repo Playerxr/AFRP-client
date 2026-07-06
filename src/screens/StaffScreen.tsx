@@ -11,11 +11,15 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { setInitial } from '../actions/appActions';
 import { ButtonLauncher, MainContainer } from '../components';
 import { SupportThread } from '../components/Support/SupportThread';
 import { GameSettings } from '../features/gameSettings';
 import { StaffConfig } from '../features/staffConfig';
+import GtaSetupModule from '../modules/GtaSetupModule';
+import { selectUserName } from '../selectors/settingSelectors';
+import { useAppSelector } from '../hooks/useAppSelector';
 import { useAppDispatch } from '../hooks/useAppDispatch';
 import { dbRef, FOUNDER_UID, StaffRank, StaffSession } from '../services/afrpDb';
 import { fetchInitialApp } from '../thunks/appThunks';
@@ -42,6 +46,8 @@ type ConvoPreview = { id: string; pseudo: string; last: string; ts: number };
  */
 export const StaffScreen = React.memo(({ navigation }: StaffScreenType) => {
   const dispatch = useAppDispatch();
+
+  const userName = useAppSelector(selectUserName);
 
   // Connexion
   const [rank, setRank] = useState<StaffRank>(StaffSession.rank);
@@ -78,6 +84,23 @@ export const StaffScreen = React.memo(({ navigation }: StaffScreenType) => {
     setLogs('Lecture...');
     setLogs(await GameSettings.readLogs());
   }, []);
+
+  // Lance le jeu directement (sans repasser par le téléchargement) — applique
+  // pseudo + mode test (sans mods) si activé sur l'accueil.
+  const onLaunchGame = useCallback(async () => {
+    const safe = (await AsyncStorage.getItem('afrp_safe_mode')) === '1';
+    const live = (await AsyncStorage.getItem('afrp_live_mode')) === '1';
+    await GameSettings.patch({
+      nickName: userName,
+      voiceChat: !live,
+      mods: !safe,
+    });
+    try {
+      await GtaSetupModule.startGame();
+    } catch (e: any) {
+      Alert.alert('Jeu', 'Lancement impossible : ' + String(e?.message ?? e));
+    }
+  }, [userName]);
 
   const onShareLogs = useCallback(() => {
     if (logs) {
@@ -655,8 +678,12 @@ export const StaffScreen = React.memo(({ navigation }: StaffScreenType) => {
           </>
         )}
 
-        {/* Diagnostic : lit les logs de crash du jeu (écran noir au lancement) */}
+        {/* Diagnostic : lancer le jeu directement + lire les logs de crash */}
         <Text style={styles.label}>🐞 Diagnostic jeu</Text>
+        <ButtonLauncher btnWidth={'100%'} background={'#00a86b'} onPress={onLaunchGame}>
+          ▶ Lancer le jeu (sans télécharger)
+        </ButtonLauncher>
+        <View style={{ height: 10 }} />
         <ButtonLauncher btnWidth={'100%'} background={'#16324a'} onPress={onViewLogs}>
           Voir les logs du jeu (après un crash)
         </ButtonLauncher>
