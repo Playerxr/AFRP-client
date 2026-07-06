@@ -26,12 +26,10 @@ import { usePermisionFile } from '../hooks/usePermisionFile';
 import { useSpaceDownlload } from '../hooks/useSpaceDownload';
 import { useAppDispatch } from '../hooks/useAppDispatch';
 import { useAppSelector } from '../hooks/useAppSelector';
-import { selectSelectedServer } from '../selectors/appSelectors';
 import {
   selectCompare,
   selectLoaderDownload,
 } from '../selectors/loaderSelectors';
-import { selectServer } from '../selectors/serverSelectors';
 import { selectUserName } from '../selectors/settingSelectors';
 import { dbRef } from '../services/afrpDb';
 import { fetchServers } from '../thunks/serverThunks';
@@ -47,12 +45,15 @@ export const GameScreen = React.memo(() => {
   const navigation = useNavigation<any>();
 
   const userName = useAppSelector(selectUserName);
-  const selectedServer = useAppSelector(selectSelectedServer);
-  const server = useAppSelector(state => selectServer(state, selectedServer));
-  const distServer = useAppSelector(
-    state =>
-      state.distribution.servers.find(el => el.id === selectedServer) ??
-      state.distribution.servers[0],
+  // Serveur AFRP = 1er de la distribution ; on lit son statut live par son id
+  // (avant, ça passait par selectedServer=-1 non défini -> toujours "hors ligne")
+  const distServer = useAppSelector(state => state.distribution.servers[0]);
+  const server = useAppSelector(state =>
+    state.distribution.servers[0]
+      ? state.server.servers.find(
+          el => el.id === state.distribution.servers[0].id,
+        )
+      : undefined,
   );
 
   // État du cache : combien de fichiers restent à télécharger + progression
@@ -98,6 +99,8 @@ export const GameScreen = React.memo(() => {
 
   useEffect(() => {
     dispatch(fetchServers());
+    const t = setInterval(() => dispatch(fetchServers()), 30000);
+    return () => clearInterval(t);
   }, []);
 
   // % de progression du téléchargement (octets déjà pris / octets à prendre)
