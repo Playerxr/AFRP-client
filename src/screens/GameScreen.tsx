@@ -7,17 +7,20 @@ import {
   Linking,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { APP_VERSION } from '@env';
 import LinearGradient from 'react-native-linear-gradient';
 import * as Progress from 'react-native-progress';
 import { setUserNameSetting } from '../actions/settingsActions';
 import { appLogoImg } from '../assets/images';
 import { NewsFeed, useUpdateCheck } from '../components/News/NewsFeed';
+import { GameSettings } from '../features/gameSettings';
 import { formatSizeUnits } from '../helpers';
 import { usePermisionFile } from '../hooks/usePermisionFile';
 import { useSpaceDownlload } from '../hooks/useSpaceDownload';
@@ -64,7 +67,20 @@ export const GameScreen = React.memo(() => {
   const [annonce, setAnnonce] = useState('');
   const [downloading, setDownloading] = useState(false);
   const [dlError, setDlError] = useState(false);
+  const [liveMode, setLiveMode] = useState(false);
   const update = useUpdateCheck();
+
+  // Préférence "Mode Live" mémorisée
+  useEffect(() => {
+    AsyncStorage.getItem('afrp_live_mode').then(v => setLiveMode(v === '1'));
+  }, []);
+
+  const onToggleLive = useCallback(async (value: boolean) => {
+    setLiveMode(value);
+    await AsyncStorage.setItem('afrp_live_mode', value ? '1' : '0');
+    // applique tout de suite si le jeu est déjà installé
+    await GameSettings.patch({ voiceChat: !value });
+  }, []);
 
   const onPressUpdate = useCallback(() => {
     Alert.alert(
@@ -144,8 +160,14 @@ export const GameScreen = React.memo(() => {
       return; // besoin de re-cliquer JOUER une fois le cache complet
     }
 
+    // Écrit le pseudo + l'état du vocal dans le VRAI settings.json du jeu
+    // (Mode Live ON => voice_chat false => micro libre pour le live TikTok)
+    await GameSettings.patch({
+      nickName: pseudo.trim(),
+      voiceChat: !liveMode,
+    });
     await GtaSetupModule.startGame();
-  }, [pseudo, needCount]);
+  }, [pseudo, needCount, liveMode]);
 
   const btnLabel = downloading
     ? `TÉLÉCHARGEMENT ${percent}%`
@@ -256,6 +278,22 @@ export const GameScreen = React.memo(() => {
             maxLength={24}
             onChangeText={setPseudo}
             onEndEditing={onEndPseudo}
+          />
+        </View>
+
+        {/* Mode Live TikTok : libère le micro pour parler sur le live */}
+        <View style={styles.liveRow}>
+          <View style={{ flex: 1, paddingRight: 10 }}>
+            <Text style={styles.liveTitle}>🔴 Mode Live TikTok</Text>
+            <Text style={styles.liveHint}>
+              Coupe le vocal du jeu → tu parles sur ton live sans rien désactiver
+            </Text>
+          </View>
+          <Switch
+            value={liveMode}
+            onValueChange={onToggleLive}
+            trackColor={{ false: '#16324a', true: '#c8324a' }}
+            thumbColor={'#ffffff'}
           />
         </View>
 
@@ -427,6 +465,30 @@ const styles = StyleSheet.create({
   annonceText: {
     color: '#35e8a9',
     fontSize: 12,
+    fontFamily: 'sans-serif-condensed',
+  },
+  liveRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0d1a2a',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#c8324a55',
+    marginHorizontal: 16,
+    marginTop: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  liveTitle: {
+    color: '#ff6b8a',
+    fontSize: 13,
+    fontWeight: 'bold',
+    fontFamily: 'sans-serif-condensed',
+  },
+  liveHint: {
+    color: '#5a8a7a',
+    fontSize: 10,
+    marginTop: 2,
     fontFamily: 'sans-serif-condensed',
   },
   cardPseudo: {
