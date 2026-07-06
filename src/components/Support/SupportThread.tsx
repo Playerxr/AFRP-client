@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   FlatList,
   StyleSheet,
@@ -30,6 +30,52 @@ export const SupportThread = React.memo((props: SupportThreadProps) => {
   const [msgs, setMsgs] = useState<SupportMsg[]>([]);
   const [text, setText] = useState('');
   const [hint, setHint] = useState('');
+  const [otherTyping, setOtherTyping] = useState(false);
+  const lastTyping = useRef(0);
+
+  const other = role === 'staff' ? 'player' : 'staff';
+
+  // Écoute "l'autre partie est en train d'écrire"
+  useEffect(() => {
+    if (!convoId) {
+      return undefined;
+    }
+    try {
+      const r = dbRef(`support_chats/${convoId}/typing/${other}`);
+      const cb = r.on('value', snap => {
+        const ts = snap.val();
+        setOtherTyping(typeof ts === 'number' && ts > Date.now() - 6000);
+      });
+      const t = setInterval(() => {
+        r.once('value', snap => {
+          const ts = snap.val();
+          setOtherTyping(typeof ts === 'number' && ts > Date.now() - 6000);
+        });
+      }, 3000);
+      return () => {
+        r.off('value', cb);
+        clearInterval(t);
+      };
+    } catch (e) {
+      return undefined;
+    }
+  }, [convoId, other]);
+
+  const onChangeText = useCallback(
+    (value: string) => {
+      setText(value);
+      const now = Date.now();
+      if (now - lastTyping.current > 1500) {
+        lastTyping.current = now;
+        try {
+          const r = dbRef(`support_chats/${convoId}/typing/${role}`);
+          r.setValue(now);
+          r.onDisconnect().remove();
+        } catch (e) {}
+      }
+    },
+    [convoId, role],
+  );
 
   useEffect(() => {
     if (!convoId) {
@@ -76,6 +122,7 @@ export const SupportThread = React.memo((props: SupportThreadProps) => {
         text: value,
         timestamp: Date.now(),
       });
+      dbRef(`support_chats/${convoId}/typing/${role}`).remove();
       setText('');
       setHint('');
     } catch (e) {
@@ -113,6 +160,11 @@ export const SupportThread = React.memo((props: SupportThreadProps) => {
         windowSize={7}
         removeClippedSubviews
       />
+      {otherTyping && (
+        <Text style={styles.typing}>
+          {role === 'staff' ? 'Le joueur écrit...' : 'Le staff écrit...'}
+        </Text>
+      )}
       {hint.length > 0 && <Text style={styles.hint}>{hint}</Text>}
       <View style={styles.inputRow}>
         <TextInput
@@ -123,7 +175,7 @@ export const SupportThread = React.memo((props: SupportThreadProps) => {
           placeholderTextColor="#5a8a7a"
           value={text}
           maxLength={1000}
-          onChangeText={setText}
+          onChangeText={onChangeText}
         />
         <TouchableOpacity style={styles.sendBtn} onPress={onSend}>
           <Text style={styles.sendBtnText}>➤</Text>
@@ -171,6 +223,13 @@ const styles = StyleSheet.create({
     color: '#ff7a7a',
     fontSize: 11,
     marginBottom: 4,
+  },
+  typing: {
+    color: '#00c880',
+    fontSize: 11,
+    fontStyle: 'italic',
+    marginBottom: 4,
+    marginLeft: 4,
   },
   inputRow: {
     flexDirection: 'row',

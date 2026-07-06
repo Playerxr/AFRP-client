@@ -160,6 +160,34 @@ export const StaffScreen = React.memo(({ navigation }: StaffScreenType) => {
     setOpenConvo('');
   }, []);
 
+  // Supprime un ticket support (avec confirmation)
+  const onDeleteConvo = useCallback(
+    (id: string, pseudo: string) => {
+      Alert.alert(
+        'Supprimer le ticket',
+        `Supprimer définitivement la conversation de ${pseudo} ?`,
+        [
+          { text: 'Annuler', style: 'cancel' },
+          {
+            text: 'Supprimer',
+            style: 'destructive',
+            onPress: () => {
+              try {
+                dbRef(`support_chats/${id}`).remove();
+                if (openConvo === id) {
+                  setOpenConvo('');
+                }
+              } catch (e) {
+                Alert.alert('Support', 'Suppression impossible (connexion ?).');
+              }
+            },
+          },
+        ],
+      );
+    },
+    [openConvo],
+  );
+
   const onToggleService = useCallback(
     async (value: boolean) => {
       setEnService(value);
@@ -336,9 +364,15 @@ export const StaffScreen = React.memo(({ navigation }: StaffScreenType) => {
     return (
       <MainContainer image={false}>
         <View style={{ flex: 1, paddingTop: 8 }}>
-          <TouchableOpacity onPress={() => setOpenConvo('')}>
-            <Text style={styles.back}>‹ Retour aux conversations</Text>
-          </TouchableOpacity>
+          <View style={styles.threadHeader}>
+            <TouchableOpacity onPress={() => setOpenConvo('')}>
+              <Text style={styles.back}>‹ Retour aux conversations</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => onDeleteConvo(openConvo, 'ce joueur')}>
+              <Text style={styles.deleteBtn}>🗑 Supprimer</Text>
+            </TouchableOpacity>
+          </View>
           <SupportThread convoId={openConvo} role="staff" pseudo="Staff AFRP" />
         </View>
       </MainContainer>
@@ -492,15 +526,21 @@ export const StaffScreen = React.memo(({ navigation }: StaffScreenType) => {
           <Text style={styles.hint}>Aucune conversation pour l'instant.</Text>
         )}
         {convos.map(c => (
-          <TouchableOpacity
-            key={c.id}
-            style={styles.convo}
-            onPress={() => setOpenConvo(c.id)}>
-            <Text style={styles.convoPseudo}>{c.pseudo}</Text>
-            <Text style={styles.convoLast} numberOfLines={1}>
-              {c.last || '(vide)'}
-            </Text>
-          </TouchableOpacity>
+          <View key={c.id} style={styles.convoRow}>
+            <TouchableOpacity
+              style={styles.convo}
+              onPress={() => setOpenConvo(c.id)}>
+              <Text style={styles.convoPseudo}>{c.pseudo}</Text>
+              <Text style={styles.convoLast} numberOfLines={1}>
+                {c.last || '(vide)'}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.convoDelete}
+              onPress={() => onDeleteConvo(c.id, c.pseudo)}>
+              <Text style={styles.convoDeleteText}>🗑</Text>
+            </TouchableOpacity>
+          </View>
         ))}
 
         {/* Outils fondateur */}
@@ -662,13 +702,41 @@ const styles = StyleSheet.create({
   rankChipTextActive: {
     color: '#ffffff',
   },
+  threadHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingRight: 4,
+  },
+  deleteBtn: {
+    color: '#ff6b6b',
+    fontSize: 13,
+    marginTop: 24,
+    fontWeight: '600',
+  },
+  convoRow: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    marginBottom: 8,
+  },
   convo: {
+    flex: 1,
     backgroundColor: '#0d1a2a',
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#1e4a3a7f',
     padding: 12,
-    marginBottom: 8,
+  },
+  convoDelete: {
+    width: 48,
+    marginLeft: 8,
+    borderRadius: 12,
+    backgroundColor: '#3a1c26',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  convoDeleteText: {
+    fontSize: 18,
   },
   convoPseudo: {
     color: '#35e8a9',

@@ -18,6 +18,10 @@ export const safeKey = (s: string) => s.replace(/[.#$[\]/]/g, '_');
 
 export type StaffRank = 'fondateur' | 'admin' | 'moderateur' | null;
 
+// UID Firebase du fondateur : toujours reconnu comme fondateur, même si sa
+// ligne staff_allowlist est illisible/manquante (secours anti-blocage).
+export const FOUNDER_UID = 'bDlUYHpS4lXY35uKdXbTecxTowj2';
+
 /**
  * Session staff (email/mot de passe créés par le fondateur dans la console
  * Firebase, rang lu dans staff_allowlist — voir SUPPORT_SETUP.md du launcher).
@@ -33,6 +37,15 @@ export const StaffSession = {
       password,
     );
     const uid = cred.user.uid;
+
+    // Le fondateur passe toujours, même si staff_allowlist est illisible
+    if (uid === FOUNDER_UID) {
+      StaffSession.rank = 'fondateur';
+      StaffSession.uid = uid;
+      StaffSession.email = email.trim();
+      return 'fondateur';
+    }
+
     const snap = await dbRef(`staff_allowlist/${uid}`).once('value');
     const v = snap.val();
     const rank: StaffRank =
