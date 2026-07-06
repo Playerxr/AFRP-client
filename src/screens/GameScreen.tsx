@@ -72,11 +72,18 @@ export const GameScreen = React.memo(() => {
   const [downloading, setDownloading] = useState(false);
   const [dlError, setDlError] = useState(false);
   const [liveMode, setLiveMode] = useState(false);
+  const [safeMode, setSafeMode] = useState(false);
   const update = useUpdateCheck();
 
-  // Préférence "Mode Live" mémorisée
+  // Préférences mémorisées
   useEffect(() => {
     AsyncStorage.getItem('afrp_live_mode').then(v => setLiveMode(v === '1'));
+    AsyncStorage.getItem('afrp_safe_mode').then(v => setSafeMode(v === '1'));
+  }, []);
+
+  const onToggleSafe = useCallback(async (value: boolean) => {
+    setSafeMode(value);
+    await AsyncStorage.setItem('afrp_safe_mode', value ? '1' : '0');
   }, []);
 
   const onToggleLive = useCallback(async (value: boolean) => {
@@ -171,14 +178,15 @@ export const GameScreen = React.memo(() => {
       return; // besoin de re-cliquer JOUER une fois le cache complet
     }
 
-    // Écrit le pseudo + l'état du vocal dans le VRAI settings.json du jeu
-    // (Mode Live ON => voice_chat false => micro libre pour le live TikTok)
+    // Écrit le pseudo + l'état du vocal + (mode test) l'activation des mods
+    // dans le VRAI settings.json du jeu avant de lancer.
     await GameSettings.patch({
       nickName: pseudo.trim(),
       voiceChat: !liveMode,
+      mods: !safeMode, // safeMode ON => mods désactivés (test)
     });
     await GtaSetupModule.startGame();
-  }, [pseudo, needCount, liveMode, isDownloading]);
+  }, [pseudo, needCount, liveMode, safeMode, isDownloading]);
 
   const btnLabel = isDownloading
     ? `TÉLÉCHARGEMENT ${percent}%`
@@ -304,6 +312,22 @@ export const GameScreen = React.memo(() => {
             value={liveMode}
             onValueChange={onToggleLive}
             trackColor={{ false: '#16324a', true: '#c8324a' }}
+            thumbColor={'#ffffff'}
+          />
+        </View>
+
+        {/* Mode test : lance le jeu sans les mods (diagnostic écran noir) */}
+        <View style={styles.liveRow}>
+          <View style={{ flex: 1, paddingRight: 10 }}>
+            <Text style={styles.safeTitle}>🧪 Mode test (sans mods)</Text>
+            <Text style={styles.liveHint}>
+              À activer si le jeu plante à l'ouverture — lance sans les mods
+            </Text>
+          </View>
+          <Switch
+            value={safeMode}
+            onValueChange={onToggleSafe}
+            trackColor={{ false: '#16324a', true: '#e0a800' }}
             thumbColor={'#ffffff'}
           />
         </View>
@@ -492,6 +516,12 @@ const styles = StyleSheet.create({
   },
   liveTitle: {
     color: '#ff6b8a',
+    fontSize: 13,
+    fontWeight: 'bold',
+    fontFamily: 'sans-serif-condensed',
+  },
+  safeTitle: {
+    color: '#ffcf5a',
     fontSize: 13,
     fontWeight: 'bold',
     fontFamily: 'sans-serif-condensed',

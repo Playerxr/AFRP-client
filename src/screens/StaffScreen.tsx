@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   ScrollView,
+  Share,
   StyleSheet,
   Switch,
   Text,
@@ -13,6 +14,7 @@ import {
 import { setInitial } from '../actions/appActions';
 import { ButtonLauncher, MainContainer } from '../components';
 import { SupportThread } from '../components/Support/SupportThread';
+import { GameSettings } from '../features/gameSettings';
 import { StaffConfig } from '../features/staffConfig';
 import { useAppDispatch } from '../hooks/useAppDispatch';
 import { dbRef, StaffRank, StaffSession } from '../services/afrpDb';
@@ -68,6 +70,20 @@ export const StaffScreen = React.memo(({ navigation }: StaffScreenType) => {
   // Support (boîte staff)
   const [convos, setConvos] = useState<ConvoPreview[]>([]);
   const [openConvo, setOpenConvo] = useState<string>('');
+
+  // Logs de crash du jeu
+  const [logs, setLogs] = useState<string | null>(null);
+
+  const onViewLogs = useCallback(async () => {
+    setLogs('Lecture...');
+    setLogs(await GameSettings.readLogs());
+  }, []);
+
+  const onShareLogs = useCallback(() => {
+    if (logs) {
+      Share.share({ message: `Logs jeu AFRP:\n${logs}` }).catch(() => {});
+    }
+  }, [logs]);
 
   // Outils fondateur (config launcher locale)
   const [url, setUrl] = useState('');
@@ -359,6 +375,29 @@ export const StaffScreen = React.memo(({ navigation }: StaffScreenType) => {
     );
   }
 
+  // ── Logs de crash du jeu ───────────────────────────────────────────
+  if (logs !== null) {
+    return (
+      <MainContainer image={false}>
+        <View style={{ flex: 1, paddingTop: 8 }}>
+          <View style={styles.threadHeader}>
+            <TouchableOpacity onPress={() => setLogs(null)}>
+              <Text style={styles.back}>‹ Retour</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={onShareLogs}>
+              <Text style={[styles.deleteBtn, { color: '#00c880' }]}>
+                📤 Partager
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <ScrollView style={{ flex: 1, marginTop: 8 }}>
+            <Text style={styles.logText}>{logs}</Text>
+          </ScrollView>
+        </View>
+      </MainContainer>
+    );
+  }
+
   // ── Fil support ouvert (staff) ─────────────────────────────────────
   if (openConvo) {
     return (
@@ -588,6 +627,12 @@ export const StaffScreen = React.memo(({ navigation }: StaffScreenType) => {
           </>
         )}
 
+        {/* Diagnostic : lit les logs de crash du jeu (écran noir au lancement) */}
+        <Text style={styles.label}>🐞 Diagnostic jeu</Text>
+        <ButtonLauncher btnWidth={'100%'} background={'#16324a'} onPress={onViewLogs}>
+          Voir les logs du jeu (après un crash)
+        </ButtonLauncher>
+
         <View style={{ height: 16 }} />
         <ButtonLauncher btnWidth={'100%'} background={'#5a2a2a'} onPress={onLogout}>
           Déconnexion staff
@@ -737,6 +782,12 @@ const styles = StyleSheet.create({
   },
   convoDeleteText: {
     fontSize: 18,
+  },
+  logText: {
+    color: '#a9c4d6',
+    fontSize: 10,
+    fontFamily: 'monospace',
+    paddingBottom: 40,
   },
   convoPseudo: {
     color: '#35e8a9',
