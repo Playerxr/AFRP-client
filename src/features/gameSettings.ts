@@ -57,51 +57,84 @@ export const GameSettings = {
     }
   },
 
-  /**
-   * Lit les logs de crash écrits par le moteur du jeu dans son dossier
-   * (permet de diagnostiquer un plantage SANS PC ni adb). On regarde plusieurs
-   * emplacements connus + le dossier logcat.
-   */
-  readLogs: async (): Promise<string> => {
+  // Copie interne protégée (les nettoyeurs de mémoire ne touchent pas
+  // /data/data → contrairement au dossier externe files/).
+  savedCrashPath: () => `${RNFS.DocumentDirectoryPath}/afrp_last_crash.txt`,
+
+  /** Rassemble le contenu des fichiers de log du moteur (bornes : dossiers connus) */
+  collectRawLogs: async (): Promise<string> => {
     const base = RNFS.ExternalDirectoryPath;
-    const candidates = [
+    let out = '';
+    const readInto = async (rel: string) => {
+      try {
+        const p = `${base}/${rel}`;
+        if (await RNFS.exists(p)) {
+          const c = await RNFS.readFile(p, 'utf8');
+          if (c.trim().length > 0) {
+            out += `\n===== ${rel} =====\n${c.slice(-4000)}\n`;
+          }
+        }
+      } catch (e) {}
+    };
+    for (const f of [
       'crash_log.log',
+      'crashlog.txt',
       'SAMP/crash_log.log',
       'samp_log.txt',
       'SAMP/samp_log.txt',
       'SAMP/svlog.txt',
       'gtasa_crash.log',
-    ];
-    let out = '';
-    for (const c of candidates) {
+      'crash.txt',
+    ]) {
+      await readInto(f);
+    }
+    // Fichiers .log/.txt à la racine + dossier logcat (le plus récent)
+    for (const dir of ['', 'logcat', 'SAMP']) {
       try {
-        const p = `${base}/${c}`;
-        if (await RNFS.exists(p)) {
-          const content = await RNFS.readFile(p, 'utf8');
-          if (content.trim().length > 0) {
-            out += `\n===== ${c} =====\n${content.slice(-4000)}\n`;
+        const d = dir ? `${base}/${dir}` : base;
+        if (!(await RNFS.exists(d))) {
+          continue;
+        }
+        const files = (await RNFS.readDir(d))
+          .filter(f => f.isFile() && /\.(log|txt)$/i.test(f.name))
+          .sort((a, b) => (b.mtime?.getTime() || 0) - (a.mtime?.getTime() || 0))
+          .slice(0, 3);
+        for (const f of files) {
+          const c = await RNFS.readFile(f.path, 'utf8');
+          if (c.trim().length > 0) {
+            out += `\n===== ${dir}/${f.name} =====\n${c.slice(-4000)}\n`;
           }
         }
       } catch (e) {}
     }
+    return out.trim();
+  },
+
+  /** À appeler au démarrage : sauve une COPIE du log dans le stockage interne */
+  captureCrash: async (): Promise<void> => {
     try {
-      const dir = `${base}/logcat`;
-      if (await RNFS.exists(dir)) {
-        const files = await RNFS.readDir(dir);
-        files.sort(
-          (a, b) => (b.mtime?.getTime() || 0) - (a.mtime?.getTime() || 0),
-        );
-        if (files[0]) {
-          const content = await RNFS.readFile(files[0].path, 'utf8');
-          out += `\n===== logcat/${files[0].name} =====\n${content.slice(
-            -4000,
-          )}\n`;
+      const raw = await GameSettings.collectRawLogs();
+      if (raw.length > 0) {
+        await RNFS.writeFile(GameSettings.savedCrashPath(), raw, 'utf8');
+      }
+    } catch (e) {}
+  },
+
+  /** Logs à afficher : fichiers actuels + copie interne protégée */
+  readLogs: async (): Promise<string> => {
+    let out = await GameSettings.collectRawLogs();
+    try {
+      const saved = GameSettings.savedCrashPath();
+      if (await RNFS.exists(saved)) {
+        const c = await RNFS.readFile(saved, 'utf8');
+        if (c.trim().length > 0 && !out.includes(c.slice(0, 200))) {
+          out += `\n===== copie sauvegardée =====\n${c.slice(-4000)}\n`;
         }
       }
     } catch (e) {}
     return (
       out.trim() ||
-      "Aucun log de crash trouvé. Lance le jeu (qu'il plante), puis reviens ici."
+      "Aucun log trouvé. Lance le jeu (qu'il plante), rouvre l'app tout de suite, puis reviens ici."
     );
   },
 };

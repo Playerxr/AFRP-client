@@ -2,11 +2,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import messaging from '@react-native-firebase/messaging';
 import React, { useEffect } from 'react';
 import { BackHandler } from 'react-native';
+import { GameSettings } from './src/features/gameSettings';
 import { showAfrpNotification } from './src/features/pushDisplay';
 import { NavigationRouter } from './src/routers/navigation-router';
 
 export const App = () => {
   useEffect(() => {
+    // Dès l'ouverture : met à l'abri le log de crash du jeu (copie interne
+    // protégée) avant qu'un nettoyeur de mémoire ne vide le dossier externe.
+    GameSettings.captureCrash();
+
     const backAction = () => {
       return true;
     };
