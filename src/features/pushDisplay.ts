@@ -19,27 +19,26 @@ export async function showAfrpNotification(
     return;
   }
 
+  // Son selon le canal (res/raw du launcher AFRP)
+  const sound = canal === 'afrp_support' ? 'notif_staff' : 'notif_annonce';
+  // Canal VERSIONNÉ (_v2) : un canal Android est immuable une fois créé, donc
+  // pour appliquer le son on utilise un nouvel id.
+  const channelId = `${canal}_v2`;
+
   try {
     await notifee.createChannel({
-      id: canal,
+      id: channelId,
       name:
         canal === 'afrp_chat'
           ? 'Chat AFRP'
           : canal === 'afrp_support'
           ? 'Support AFRP'
           : 'Annonces AFRP',
-      // le chat ne fait pas de heads-up à chaque message (moins intrusif)
       importance:
         canal === 'afrp_chat'
           ? AndroidImportance.DEFAULT
           : AndroidImportance.HIGH,
-      // sons repris du launcher AFRP (res/raw)
-      sound:
-        canal === 'afrp_support'
-          ? 'notif_staff'
-          : canal === 'afrp_annonces'
-          ? 'notif_annonce'
-          : undefined,
+      sound,
     });
 
     await notifee.displayNotification({
@@ -47,8 +46,9 @@ export async function showAfrpNotification(
       title: titre,
       body: texte,
       android: {
-        channelId: canal,
+        channelId,
         smallIcon: 'ic_launcher',
+        sound,
         pressAction: { id: 'default' },
       },
     });

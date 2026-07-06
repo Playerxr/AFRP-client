@@ -17,7 +17,7 @@ import { SupportThread } from '../components/Support/SupportThread';
 import { GameSettings } from '../features/gameSettings';
 import { StaffConfig } from '../features/staffConfig';
 import { useAppDispatch } from '../hooks/useAppDispatch';
-import { dbRef, StaffRank, StaffSession } from '../services/afrpDb';
+import { dbRef, FOUNDER_UID, StaffRank, StaffSession } from '../services/afrpDb';
 import { fetchInitialApp } from '../thunks/appThunks';
 
 type StaffScreenType = NativeStackScreenProps<any>;
@@ -227,57 +227,77 @@ export const StaffScreen = React.memo(({ navigation }: StaffScreenType) => {
     [rank],
   );
 
-  const onSaveAnnonce = useCallback(() => {
+  const onSaveAnnonce = useCallback(async () => {
     try {
-      dbRef('app_config/annonce').setValue(annonce.trim());
+      await dbRef('app_config/annonce').set(annonce.trim());
       // annonces/derniere déclenche la notif push (Cloud Function pushAnnonce)
       if (annonce.trim().length > 0) {
-        dbRef('annonces/derniere').setValue({
+        await dbRef('annonces/derniere').set({
           text: annonce.trim(),
           timestamp: Date.now(),
         });
       }
       Alert.alert('Espace Staff', 'Annonce publiée + notifiée à tous.');
-    } catch (e) {
-      Alert.alert('Espace Staff', "Échec (fondateur uniquement pour l'annonce).");
+    } catch (e: any) {
+      const msg = String(e?.message ?? e);
+      Alert.alert(
+        'Annonce refusée',
+        msg.toLowerCase().includes('permission')
+          ? `Firebase refuse l'écriture : ton compte n'est pas "fondateur" dans staff_allowlist.\n\nTon UID : ${
+              StaffSession.uid
+            }\n\n(Il doit valoir "fondateur" dans la base.)`
+          : msg,
+      );
     }
   }, [annonce]);
 
-  const onPublishNews = useCallback(() => {
+  const onPublishNews = useCallback(async () => {
     const t = newsTitle.trim();
     if (t.length < 2) {
       Alert.alert('Actualité', 'Donne un titre à ton actualité.');
       return;
     }
     try {
-      dbRef('news').push({
+      await dbRef('news').push({
         title: t,
         text: newsText.trim(),
         timestamp: Date.now(),
       });
       setNewsTitle('');
       setNewsText('');
-      Alert.alert('Actualité', 'Publiée sur l\'accueil de tous les joueurs.');
-    } catch (e) {
-      Alert.alert('Actualité', 'Échec (connexion ?).');
+      Alert.alert('Actualité', "Publiée sur l'accueil de tous les joueurs.");
+    } catch (e: any) {
+      const msg = String(e?.message ?? e);
+      Alert.alert(
+        'Actualité refusée',
+        msg.toLowerCase().includes('permission')
+          ? 'Firebase refuse : ajoute la règle du nœud "news" (voir les instructions).'
+          : msg,
+      );
     }
   }, [newsTitle, newsText]);
 
-  const onPublishUpdate = useCallback(() => {
+  const onPublishUpdate = useCallback(async () => {
     const code = parseInt(updCode, 10);
     if (!code || code < 1) {
       Alert.alert('Mise à jour', 'Entre le numéro de version (ex : 3).');
       return;
     }
     try {
-      dbRef('app_config/latest_version_code').setValue(code);
-      dbRef('app_config/apk_url').setValue(updUrl.trim());
+      await dbRef('app_config/latest_version_code').set(code);
+      await dbRef('app_config/apk_url').set(updUrl.trim());
       Alert.alert(
         'Mise à jour',
         'Cloche activée chez les joueurs avec une version plus ancienne.',
       );
-    } catch (e) {
-      Alert.alert('Mise à jour', 'Échec (fondateur uniquement).');
+    } catch (e: any) {
+      const msg = String(e?.message ?? e);
+      Alert.alert(
+        'Mise à jour refusée',
+        msg.toLowerCase().includes('permission')
+          ? `Ton compte n'est pas "fondateur" dans staff_allowlist.\nUID : ${StaffSession.uid}`
+          : msg,
+      );
     }
   }, [updCode, updUrl]);
 
@@ -426,6 +446,14 @@ export const StaffScreen = React.memo(({ navigation }: StaffScreenType) => {
           <Text style={styles.title}>Espace Staff</Text>
           <Text style={styles.rank}>{RANK_LABEL[rank] ?? rank}</Text>
         </View>
+
+        {/* Diagnostic UID : pour vérifier que Firebase te voit bien fondateur */}
+        <Text style={styles.uidLine}>
+          Ton UID : {StaffSession.uid}
+          {StaffSession.uid === FOUNDER_UID
+            ? '  ✅ fondateur'
+            : '  ⚠️ pas l\'UID fondateur'}
+        </Text>
 
         {/* En service */}
         <View style={styles.switchRow}>
@@ -673,6 +701,12 @@ const styles = StyleSheet.create({
     color: '#00c880',
     fontSize: 13,
     fontWeight: '700',
+  },
+  uidLine: {
+    color: 'rgba(255,255,255,0.55)',
+    fontSize: 10,
+    fontFamily: 'monospace',
+    marginBottom: 14,
   },
   subtitle: {
     color: 'rgba(255,255,255,0.6)',
