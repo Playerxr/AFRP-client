@@ -53,6 +53,12 @@ export const StaffScreen = React.memo(({ navigation }: StaffScreenType) => {
   // Annonce (fondateur)
   const [annonce, setAnnonce] = useState('');
 
+  // Actualité + mise à jour (fondateur)
+  const [newsTitle, setNewsTitle] = useState('');
+  const [newsText, setNewsText] = useState('');
+  const [updCode, setUpdCode] = useState('');
+  const [updUrl, setUpdUrl] = useState('');
+
   // VIP
   const [vipPseudo, setVipPseudo] = useState('');
   const [vipRank, setVipRank] = useState(1);
@@ -180,11 +186,56 @@ export const StaffScreen = React.memo(({ navigation }: StaffScreenType) => {
   const onSaveAnnonce = useCallback(() => {
     try {
       dbRef('app_config/annonce').setValue(annonce.trim());
-      Alert.alert('Espace Staff', 'Annonce publiée chez tous les joueurs.');
+      // annonces/derniere déclenche la notif push (Cloud Function pushAnnonce)
+      if (annonce.trim().length > 0) {
+        dbRef('annonces/derniere').setValue({
+          text: annonce.trim(),
+          timestamp: Date.now(),
+        });
+      }
+      Alert.alert('Espace Staff', 'Annonce publiée + notifiée à tous.');
     } catch (e) {
       Alert.alert('Espace Staff', "Échec (fondateur uniquement pour l'annonce).");
     }
   }, [annonce]);
+
+  const onPublishNews = useCallback(() => {
+    const t = newsTitle.trim();
+    if (t.length < 2) {
+      Alert.alert('Actualité', 'Donne un titre à ton actualité.');
+      return;
+    }
+    try {
+      dbRef('news').push({
+        title: t,
+        text: newsText.trim(),
+        timestamp: Date.now(),
+      });
+      setNewsTitle('');
+      setNewsText('');
+      Alert.alert('Actualité', 'Publiée sur l\'accueil de tous les joueurs.');
+    } catch (e) {
+      Alert.alert('Actualité', 'Échec (connexion ?).');
+    }
+  }, [newsTitle, newsText]);
+
+  const onPublishUpdate = useCallback(() => {
+    const code = parseInt(updCode, 10);
+    if (!code || code < 1) {
+      Alert.alert('Mise à jour', 'Entre le numéro de version (ex : 3).');
+      return;
+    }
+    try {
+      dbRef('app_config/latest_version_code').setValue(code);
+      dbRef('app_config/apk_url').setValue(updUrl.trim());
+      Alert.alert(
+        'Mise à jour',
+        'Cloche activée chez les joueurs avec une version plus ancienne.',
+      );
+    } catch (e) {
+      Alert.alert('Mise à jour', 'Échec (fondateur uniquement).');
+    }
+  }, [updCode, updUrl]);
 
   const onGrantVip = useCallback(() => {
     const p = vipPseudo.trim();
@@ -330,6 +381,60 @@ export const StaffScreen = React.memo(({ navigation }: StaffScreenType) => {
               background={'#00a86b'}
               onPress={onSaveAnnonce}>
               Publier l'annonce
+            </ButtonLauncher>
+
+            {/* Actualité */}
+            <Text style={styles.label}>📰 Publier une actualité</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Titre de l'actu"
+              placeholderTextColor="rgba(255,255,255,0.5)"
+              value={newsTitle}
+              onChangeText={setNewsTitle}
+            />
+            <TextInput
+              style={[styles.input, { height: 80, textAlignVertical: 'top' }]}
+              placeholder="Contenu (facultatif)"
+              placeholderTextColor="rgba(255,255,255,0.5)"
+              multiline
+              value={newsText}
+              onChangeText={setNewsText}
+            />
+            <ButtonLauncher
+              btnWidth={'100%'}
+              background={'#00a86b'}
+              onPress={onPublishNews}>
+              Publier l'actualité
+            </ButtonLauncher>
+
+            {/* Mise à jour de l'app */}
+            <Text style={styles.label}>🔔 Publier une mise à jour</Text>
+            <Text style={styles.hint}>
+              Numéro de version du nouvel APK (incrémente à chaque release) + lien
+              de téléchargement. La cloche s'allume chez les joueurs plus anciens.
+            </Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Numéro de version (ex : 3)"
+              placeholderTextColor="rgba(255,255,255,0.5)"
+              keyboardType="numeric"
+              value={updCode}
+              onChangeText={setUpdCode}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Lien de l'APK (https://...)"
+              placeholderTextColor="rgba(255,255,255,0.5)"
+              autoCapitalize="none"
+              keyboardType="url"
+              value={updUrl}
+              onChangeText={setUpdUrl}
+            />
+            <ButtonLauncher
+              btnWidth={'100%'}
+              background={'#00a86b'}
+              onPress={onPublishUpdate}>
+              Activer la cloche de MAJ
             </ButtonLauncher>
           </>
         )}

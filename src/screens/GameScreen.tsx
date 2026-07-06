@@ -1,8 +1,10 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
+  Alert,
   Dimensions,
   Image,
+  Linking,
   ScrollView,
   StyleSheet,
   Text,
@@ -15,7 +17,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import * as Progress from 'react-native-progress';
 import { setUserNameSetting } from '../actions/settingsActions';
 import { appLogoImg } from '../assets/images';
-import { Cards } from '../components/Card/Cards';
+import { NewsFeed, useUpdateCheck } from '../components/News/NewsFeed';
 import { formatSizeUnits } from '../helpers';
 import { usePermisionFile } from '../hooks/usePermisionFile';
 import { useSpaceDownlload } from '../hooks/useSpaceDownload';
@@ -62,6 +64,21 @@ export const GameScreen = React.memo(() => {
   const [annonce, setAnnonce] = useState('');
   const [downloading, setDownloading] = useState(false);
   const [dlError, setDlError] = useState(false);
+  const update = useUpdateCheck();
+
+  const onPressUpdate = useCallback(() => {
+    Alert.alert(
+      'Mise à jour disponible',
+      'Une nouvelle version d\'AFRP est disponible. Mets à jour pour profiter des nouveautés.',
+      [
+        { text: 'Plus tard', style: 'cancel' },
+        {
+          text: 'Mettre à jour',
+          onPress: () => update.url && Linking.openURL(update.url),
+        },
+      ],
+    );
+  }, [update.url]);
 
   useEffect(() => {
     dispatch(fetchServers());
@@ -184,6 +201,17 @@ export const GameScreen = React.memo(() => {
             <Text style={styles.chipStaffText}>⚙</Text>
           </TouchableOpacity>
 
+          {/* Cloche de mise à jour (point rouge si nouvelle version publiée) */}
+          {update.available && (
+            <TouchableOpacity
+              style={styles.chipBell}
+              activeOpacity={0.7}
+              onPress={onPressUpdate}>
+              <Text style={styles.chipStaffText}>🔔</Text>
+              <View style={styles.bellDot} />
+            </TouchableOpacity>
+          )}
+
           {/* Badge joueurs en ligne (façon GTA Online) */}
           <View style={styles.badgeOnline}>
             <View
@@ -268,9 +296,9 @@ export const GameScreen = React.memo(() => {
           {'  •  '}v{APP_VERSION}
         </Text>
 
-        {/* Actualités du projet */}
+        {/* Actualités du projet (Firebase, publiées par le fondateur) */}
         <View style={styles.news}>
-          <Cards />
+          <NewsFeed />
         </View>
       </ScrollView>
     </View>
@@ -309,6 +337,28 @@ const styles = StyleSheet.create({
   chipStaffText: {
     color: '#00c880',
     fontSize: 15,
+  },
+  chipBell: {
+    position: 'absolute',
+    top: 44,
+    left: 60,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#060d14cc',
+    borderWidth: 1,
+    borderColor: '#1e4a3a7f',
+  },
+  bellDot: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: '#ff3b3b',
   },
   badgeOnline: {
     position: 'absolute',
