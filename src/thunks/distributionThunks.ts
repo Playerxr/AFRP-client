@@ -1,23 +1,16 @@
-import { StackActions } from '@react-navigation/native';
 import { setDistribution } from '../actions/distributionActions';
-import { StaffConfig } from '../features/staffConfig';
-import { navigationRef } from '../routers/RootNavigation';
 import { DistributionService } from '../services/distribution.service';
 import { AppThunk } from '../store/store';
-import { compareFileRecursion } from './loaderThunks';
 
-export const fetchDistribution = (): AppThunk => async (dispatch, state) => {
+// App = launcher COMMUNAUTÉ : on récupère juste les infos (serveurs, actus,
+// version) depuis distribution.json. Plus de comparaison/téléchargement du
+// cache de jeu (le jeu se joue via un APK séparé). On n'échoue pas si le
+// distribution.json est absent : les onglets communauté marchent quand même.
+export const fetchDistribution = (): AppThunk => async dispatch => {
   try {
-    const { cache: caches, ...res } = await DistributionService.get();
+    const { cache: _caches, ...res } = await DistributionService.get();
     await dispatch(setDistribution(res));
-    // Espace Staff : "entrer sans télécharger le modpack" => on saute la
-    // comparaison/téléchargement du cache (gestion rapide).
-    const skipStaff = await StaffConfig.getSkipDownload();
-    if (!state().settings.skip && !skipStaff) {
-      await dispatch(compareFileRecursion({ caches }));
-    }
   } catch (error: any) {
-    console.log(error);
-    return navigationRef.current?.dispatch(StackActions.replace('Error'));
+    console.log('distribution indisponible (mode communauté):', error?.message);
   }
 };
