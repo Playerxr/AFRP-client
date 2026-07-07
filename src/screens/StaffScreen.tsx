@@ -61,6 +61,9 @@ export const StaffScreen = React.memo(({ navigation }: StaffScreenType) => {
   // Annonce (fondateur)
   const [annonce, setAnnonce] = useState('');
 
+  // Lien de téléchargement du jeu (bouton "Télécharger le jeu" de l'accueil)
+  const [gameUrl, setGameUrl] = useState('');
+
   // Actualité + mise à jour (fondateur)
   const [newsTitle, setNewsTitle] = useState('');
   const [newsText, setNewsText] = useState('');
@@ -129,7 +132,12 @@ export const StaffScreen = React.memo(({ navigation }: StaffScreenType) => {
     try {
       const r = dbRef('app_config/annonce');
       const cb = r.on('value', snap => setAnnonce(String(snap.val() ?? '')));
-      return () => r.off('value', cb);
+      const rG = dbRef('app_config/game_url');
+      const cbG = rG.on('value', snap => setGameUrl(String(snap.val() ?? '')));
+      return () => {
+        r.off('value', cb);
+        rG.off('value', cbG);
+      };
     } catch (e) {
       return undefined;
     }
@@ -273,6 +281,26 @@ export const StaffScreen = React.memo(({ navigation }: StaffScreenType) => {
       );
     }
   }, [annonce]);
+
+  const onSaveGameUrl = useCallback(async () => {
+    try {
+      await dbRef('app_config/game_url').set(gameUrl.trim());
+      Alert.alert(
+        'Lien du jeu',
+        gameUrl.trim().length > 0
+          ? "Enregistré ! Le bouton « Télécharger le jeu » de l'accueil ouvre maintenant ce lien."
+          : 'Vidé : le bouton retombe sur le Discord.',
+      );
+    } catch (e: any) {
+      const msg = String(e?.message ?? e);
+      Alert.alert(
+        'Lien du jeu refusé',
+        msg.toLowerCase().includes('permission')
+          ? `Ton compte n'est pas "fondateur". UID : ${StaffSession.uid}`
+          : msg,
+      );
+    }
+  }, [gameUrl]);
 
   const onPublishNews = useCallback(async () => {
     const t = newsTitle.trim();
@@ -505,6 +533,24 @@ export const StaffScreen = React.memo(({ navigation }: StaffScreenType) => {
               background={'#00a86b'}
               onPress={onSaveAnnonce}>
               Publier l'annonce
+            </ButtonLauncher>
+
+            {/* Lien de téléchargement du jeu (bouton de l'accueil) */}
+            <Text style={styles.label}>🎮 Lien de téléchargement du jeu</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="https://... (APK du jeu). Vide = ouvre le Discord."
+              placeholderTextColor="rgba(255,255,255,0.5)"
+              autoCapitalize="none"
+              keyboardType="url"
+              value={gameUrl}
+              onChangeText={setGameUrl}
+            />
+            <ButtonLauncher
+              btnWidth={'100%'}
+              background={'#00a86b'}
+              onPress={onSaveGameUrl}>
+              Enregistrer le lien du jeu
             </ButtonLauncher>
 
             {/* Actualité */}
