@@ -69,7 +69,7 @@ export const SupportThread = React.memo((props: SupportThreadProps) => {
         lastTyping.current = now;
         try {
           const r = dbRef(`support_chats/${convoId}/typing/${role}`);
-          r.setValue(now);
+          r.set(now);
           r.onDisconnect().remove();
         } catch (e) {}
       }

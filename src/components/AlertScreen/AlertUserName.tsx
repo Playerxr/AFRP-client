@@ -8,12 +8,12 @@ import { AlertLauncher } from '../AlertLauncher/AlertLauncher';
 
 export const AlertUserName = React.memo(() => {
   const show = useAppSelector(selectAlertUserName);
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const dispatch = useDispatch();
 
   const onPressCancel = useCallback(async () => {
     dispatch(setAlertUserName(false));
-    return navigation.jumpTo('Réglages');
+    return navigation.navigate('Réglages');
   }, []);
 
   const onConfirmPressed = useCallback(() => {

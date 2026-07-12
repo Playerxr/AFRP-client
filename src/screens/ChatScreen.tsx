@@ -155,7 +155,7 @@ export const ChatScreen = React.memo(() => {
         lastTypingWrite.current = nowTs;
         try {
           const r = dbRef(`global_chat/typing/${safeKey(me)}`);
-          r.setValue(nowTs);
+          r.set(nowTs);
           r.onDisconnect().remove();
         } catch (e) {}
       }

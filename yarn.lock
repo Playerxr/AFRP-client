@@ -1721,6 +1721,11 @@
     opencollective-postinstall "^2.0.1"
     superstruct "^0.6.2"
 
+"@react-native-firebase/auth@15.7.0":
+  version "15.7.0"
+  resolved "https://registry.yarnpkg.com/@react-native-firebase/auth/-/auth-15.7.0.tgz#bc133cb6e0f33fd307e8d3dfa7ae04b5980d7fbb"
+  integrity sha512-0HJfCc0SUcSFbz5SyZWZOJkhtn+kOU8ytuPHM+vOJBeg5owJzmLnFx1ZI20gHU5cxhN3UQy/GKMPvlIcDeW7Bg==
+
 "@react-native-firebase/crashlytics@15.7.0":
   version "15.7.0"
   resolved "https://registry.yarnpkg.com/@react-native-firebase/crashlytics/-/crashlytics-15.7.0.tgz#917692582e47b19074bfbf0960b86fd9ca7a5b6d"
@@ -1728,6 +1733,11 @@
   dependencies:
     "@expo/config-plugins" "^5.0.1"
     stacktrace-js "^2.0.0"
+
+"@react-native-firebase/database@15.7.0":
+  version "15.7.0"
+  resolved "https://registry.yarnpkg.com/@react-native-firebase/database/-/database-15.7.0.tgz#f4af53eab4a119a64bc3103190b4b9f34793ebe7"
+  integrity sha512-eOdJ+J/9MuJBqanzzsrqJzspM9jto4Zu/UrWu2/qatey6FXRfeQIn9nJr2TbaiP0M5qVEISmA9suIFyfY7bCDw==
 
 "@react-native-firebase/messaging@15.7.0":
   version "15.7.0"

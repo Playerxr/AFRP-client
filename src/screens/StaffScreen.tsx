@@ -244,7 +244,7 @@ export const StaffScreen = React.memo(({ navigation }: StaffScreenType) => {
       try {
         const r = dbRef(`staff_online/${StaffSession.uid}`);
         if (value) {
-          r.setValue({
+          r.set({
             pseudo: StaffSession.email ?? 'Staff',
             rang: rank,
             depuis: Date.now(),
