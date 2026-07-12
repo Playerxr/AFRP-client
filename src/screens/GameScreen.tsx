@@ -2,6 +2,7 @@ import { LINK_DISCORD } from '@env';
 import { useNavigation } from '@react-navigation/native';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
+  Alert,
   Dimensions,
   Image,
   Linking,
@@ -18,16 +19,21 @@ import { appLogoImg } from '../assets/images';
 import { NewsFeed, useUpdateCheck } from '../components/News/NewsFeed';
 import { useAppDispatch } from '../hooks/useAppDispatch';
 import { useAppSelector } from '../hooks/useAppSelector';
+import { usePermisionFile } from '../hooks/usePermisionFile';
+import { selectLoaderDownload } from '../selectors/loaderSelectors';
 import { selectUserName } from '../selectors/settingSelectors';
 import { dbRef } from '../services/afrpDb';
+import { startGameDownload } from '../thunks/loaderThunks';
 import { fetchServers } from '../thunks/serverThunks';
 import { fetchUserNameSetting } from '../thunks/settingsThunks';
 
 const { width } = Dimensions.get('window');
 
 // Accueil communauté AFRP (hero façon launcher). Le JEU se joue via un APK
-// séparé (moteur dédié) : le bouton ci-dessous ouvre le lien de téléchargement
-// du jeu, configurable à distance (app_config/game_url) sinon le Discord.
+// séparé (moteur dédié) : le bouton ci-dessous vérifie/télécharge d'abord le
+// modpack (anti-doublon, ne prend que ce qui manque) puis ouvre le lien de
+// téléchargement du jeu, configurable à distance (app_config/game_url) sinon
+// le Discord.
 export const GameScreen = React.memo(() => {
   const dispatch = useAppDispatch();
   const navigation = useNavigation<any>();
@@ -45,7 +51,11 @@ export const GameScreen = React.memo(() => {
   const [pseudo, setPseudo] = useState(userName);
   const [annonce, setAnnonce] = useState('');
   const [gameUrl, setGameUrl] = useState('');
+  const [preparing, setPreparing] = useState(false);
   const update = useUpdateCheck();
+  const { fetchPermision } = usePermisionFile();
+  const downloading = useAppSelector(state => state.loader.downloading);
+  const downloadProgress = useAppSelector(selectLoaderDownload);
 
   useEffect(() => {
     setPseudo(userName);
@@ -76,11 +86,54 @@ export const GameScreen = React.memo(() => {
     dispatch(fetchUserNameSetting(clean));
   }, [pseudo]);
 
-  const onDownloadGame = useCallback(() => {
-    Linking.openURL(gameUrl && gameUrl.length > 5 ? gameUrl : LINK_DISCORD).catch(
-      () => {},
-    );
-  }, [gameUrl]);
+  const onDownloadGame = useCallback(async () => {
+    if (preparing || downloading) {
+      return;
+    }
+    if (!fetchPermision()) {
+      return;
+    }
+
+    setPreparing(true);
+    try {
+      // Vérifie d'abord les fichiers du modpack déjà présents sur le
+      // téléphone (anti-doublon) et ne télécharge que ce qui manque, avant
+      // d'ouvrir le lien du jeu (sinon Discord si non configuré).
+      const result = await dispatch(startGameDownload());
+      if (result === 'ready') {
+        Linking.openURL(
+          gameUrl && gameUrl.length > 5 ? gameUrl : LINK_DISCORD,
+        ).catch(() => {});
+      } else if (result === 'no_space') {
+        // AlertSpace (redux) n'est monté que sur Staff/Réglages, pas sur
+        // l'accueil : on prévient quand même l'utilisateur ici.
+        Alert.alert(
+          'Espace insuffisant',
+          "Pas assez d'espace libre pour télécharger le modpack. Libère de la place et réessaie.",
+        );
+      } else if (result === 'download_failed') {
+        Alert.alert(
+          'Téléchargement',
+          "Le modpack n'a pas pu être téléchargé entièrement (connexion ?). Réessaie.",
+        );
+      }
+    } finally {
+      setPreparing(false);
+    }
+  }, [gameUrl, preparing, downloading, fetchPermision]);
+
+  const downloadLabel = downloading
+    ? `⬇  TÉLÉCHARGEMENT DU MODPACK… ${
+        downloadProgress.needBytes
+          ? Math.floor(
+              ((downloadProgress.currentBytes || 0) * 100) /
+                downloadProgress.needBytes,
+            )
+          : 0
+      }%`
+    : preparing
+    ? '⬇  VÉRIFICATION DES FICHIERS…'
+    : '⬇  TÉLÉCHARGER LE JEU';
 
   const onPressUpdate = useCallback(() => {
     update.url && Linking.openURL(update.url).catch(() => {});
@@ -167,9 +220,13 @@ export const GameScreen = React.memo(() => {
         {/* Bouton principal : télécharger le jeu */}
         <TouchableOpacity
           activeOpacity={0.85}
-          style={styles.btnAction}
+          disabled={preparing || downloading}
+          style={[
+            styles.btnAction,
+            (preparing || downloading) && styles.btnActionDisabled,
+          ]}
           onPress={onDownloadGame}>
-          <Text style={styles.btnActionText}>⬇  TÉLÉCHARGER LE JEU</Text>
+          <Text style={styles.btnActionText}>{downloadLabel}</Text>
         </TouchableOpacity>
 
         <Text style={styles.serverLine}>
@@ -327,6 +384,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#00a86b',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  btnActionDisabled: {
+    opacity: 0.6,
   },
   btnActionText: {
     color: '#ffffff',

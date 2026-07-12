@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StackActions } from '@react-navigation/native';
 import RNFS from 'react-native-fs';
+import { setAlertNeedSpace } from '../actions/alertActions';
 import {
   CacheType,
   setCacheReject,
@@ -15,6 +16,7 @@ import {
   FileName,
   FileValidate,
 } from '../features/fileManager';
+import { formatSizeUnits } from '../helpers';
 import { navigationRef } from '../routers/RootNavigation';
 import { AppThunk } from '../store/store';
 import {
@@ -219,6 +221,47 @@ export const nameFileRecursion = (): AppThunk => async (dispatch, state) => {
 
   return needDownload[0] > 0;
 };
+
+/**
+ * Bouton "Télécharger le jeu" de l'accueil : scanne d'abord les fichiers du
+ * modpack déjà présents sur le téléphone (compareFileRecursion → anti-doublon,
+ * ne retélécharge que ce qui manque/est invalide), puis ne télécharge que le
+ * manquant. Renvoie 'ready' dès que le modpack est complet (rien à faire ou
+ * téléchargement terminé) pour que l'appelant ouvre ensuite le lien du jeu.
+ * 'no_space' déclenche déjà sa propre alerte (AlertSpace) ; 'download_failed'
+ * n'a pas d'UI dédiée, à l'appelant de prévenir l'utilisateur.
+ */
+export const startGameDownload =
+  (): AppThunk<Promise<'ready' | 'no_space' | 'download_failed'>> =>
+  async (dispatch, state) => {
+    const { cacheMode } = state().distribution;
+
+    await dispatch(compareFileRecursion({ caches: cacheMode }));
+
+    const { needDownload, freeSpace, compare } = state().loader;
+
+    if (needDownload.length === 0) {
+      return 'ready';
+    }
+
+    const needSpace = compare.distributionCacheBytes - compare.downloadsCacheBytes;
+    if (freeSpace < needSpace) {
+      dispatch(
+        setAlertNeedSpace(true, {
+          needSpace: +formatSizeUnits(needSpace),
+          currentSpace: +formatSizeUnits(freeSpace),
+        }),
+      );
+      return 'no_space';
+    }
+
+    await dispatch(fetchStartDownload({ silent: true }));
+
+    // fetchStartDownload s'arrête silencieusement sur une erreur réseau sans
+    // relancer : si des fichiers restent dans needDownload, tout n'a pas pu
+    // être téléchargé, on n'ouvre pas le lien du jeu sur un modpack incomplet.
+    return state().loader.needDownload.length === 0 ? 'ready' : 'download_failed';
+  };
 
 export const fetchIsDownloadSuccess = (): AppThunk => async dispatch => {
   try {
