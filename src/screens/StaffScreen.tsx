@@ -88,6 +88,21 @@ export const StaffScreen = React.memo(({ navigation }: StaffScreenType) => {
     setLogs(await GameSettings.readLogs());
   }, []);
 
+  // Mode test (sans mods) : pour isoler si l'écran noir vient des mods du
+  // modpack (cleo/aml/modloader/monet) ou du jeu de base.
+  const [safeMode, setSafeMode] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      setSafeMode((await AsyncStorage.getItem('afrp_safe_mode')) === '1');
+    })();
+  }, []);
+
+  const onToggleSafeMode = async (value: boolean) => {
+    setSafeMode(value);
+    await AsyncStorage.setItem('afrp_safe_mode', value ? '1' : '0');
+  };
+
   // Lance le jeu directement (sans repasser par le téléchargement) — applique
   // pseudo + mode test (sans mods) si activé sur l'accueil.
   const onLaunchGame = useCallback(async () => {
@@ -726,6 +741,18 @@ export const StaffScreen = React.memo(({ navigation }: StaffScreenType) => {
 
         {/* Diagnostic : lancer le jeu directement + lire les logs de crash */}
         <Text style={styles.label}>🐞 Diagnostic jeu</Text>
+        <View style={styles.switchRow}>
+          <Text style={styles.switchLabel}>
+            Mode test (sans mods) — isole si l'écran noir vient des mods
+          </Text>
+          <Switch
+            value={safeMode}
+            onValueChange={onToggleSafeMode}
+            trackColor={{ false: '#16324a', true: '#00c880' }}
+            thumbColor={'#ffffff'}
+          />
+        </View>
+        <View style={{ height: 10 }} />
         <ButtonLauncher btnWidth={'100%'} background={'#00a86b'} onPress={onLaunchGame}>
           ▶ Lancer le jeu (sans télécharger)
         </ButtonLauncher>
