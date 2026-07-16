@@ -3,9 +3,11 @@
 Colle EXACTEMENT ceci dans **console.firebase.google.com → afrp-f0ef7 →
 Realtime Database → Règles → Publier**.
 
-Nouveautés vs launcher : ajout du nœud **`news`** (actualités) et le **fondateur
-identifié par son UID** peut écrire annonce/config même si `staff_allowlist`
-n'est pas parfait.
+Nouveautés vs launcher : ajout du nœud **`news`** (actualités), du nœud
+**`purchase_requests`** (demandes d'achat envoyées par les joueurs depuis la
+Boutique, onglet Cash — visibles par le staff dans Espace Staff) et le
+**fondateur identifié par son UID** peut écrire annonce/config même si
+`staff_allowlist` n'est pas parfait.
 
 ```json
 {
@@ -34,6 +36,10 @@ n'est pas parfait.
       ".read": true,
       ".write": "root.child('staff_allowlist').child(auth.uid).exists() || auth.uid === 'bDlUYHpS4lXY35uKdXbTecxTowj2'",
       "$grantId": { ".validate": "newData.isString() && newData.val().length <= 60" }
+    },
+    "purchase_requests": {
+      ".read": "root.child('staff_allowlist').child(auth.uid).exists() || auth.uid === 'bDlUYHpS4lXY35uKdXbTecxTowj2'",
+      ".write": true
     },
     "staff_online": {
       ".read": true,

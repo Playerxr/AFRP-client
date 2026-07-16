@@ -1,6 +1,7 @@
 import { LINK_DISCORD } from '@env';
 import React, { useState } from 'react';
 import {
+  Alert,
   Linking,
   ScrollView,
   StyleSheet,
@@ -8,6 +9,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useAppSelector } from '../hooks/useAppSelector';
+import { selectUserName } from '../selectors/settingSelectors';
+import { dbRef } from '../services/afrpDb';
 
 // Boutique AFRP — mêmes offres et mêmes prix que l'app AFRP Launcher.
 // [nom, emoji, prix mensuel, prix à vie, cash bonus, description]
@@ -63,9 +67,33 @@ const CASH_DATA: [string, string, string, string, string][] = [
 
 export const DonateScreen = React.memo(() => {
   const [tab, setTab] = useState<'vip' | 'cash'>('vip');
+  const userName = useAppSelector(selectUserName);
 
   const openDiscord = () => {
     Linking.openURL(LINK_DISCORD).catch(() => {});
+  };
+
+  // Envoie une demande d'achat (pseudo + pack choisi) que le staff voit dans
+  // Espace Staff, pour éviter les erreurs de pseudo tapées à la main sur
+  // Discord. Le paiement reste manuel (Discord/mobile money).
+  const onBuyCash = (pack: string, prix: string) => {
+    const pseudo = userName.trim();
+    if (pseudo.length < 3) {
+      Alert.alert(
+        'Pseudo requis',
+        "Configure ton pseudo dans l'onglet Réglages avant d'acheter, pour qu'on sache à qui attribuer le cash.",
+      );
+      return;
+    }
+    try {
+      dbRef('purchase_requests').push({
+        pseudo,
+        pack,
+        prix,
+        ts: Date.now(),
+      });
+    } catch (e) {}
+    openDiscord();
   };
 
   return (
@@ -149,7 +177,9 @@ export const DonateScreen = React.memo(() => {
                     <Text style={styles.priceVal}>{d[2]}</Text>
                   </View>
                 </View>
-                <TouchableOpacity style={styles.buyBtn} onPress={openDiscord}>
+                <TouchableOpacity
+                  style={styles.buyBtn}
+                  onPress={() => onBuyCash(d[0], d[2])}>
                   <Text style={styles.buyBtnText}>
                     Acheter {d[2]} — Ouvrir Discord
                   </Text>

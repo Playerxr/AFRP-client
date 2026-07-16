@@ -37,6 +37,13 @@ const RANK_LABEL: Record<string, string> = {
 };
 
 type ConvoPreview = { id: string; pseudo: string; last: string; ts: number };
+type PurchaseRequest = {
+  id: string;
+  pseudo: string;
+  pack: string;
+  prix: string;
+  ts: number;
+};
 
 /**
  * Espace Staff — mêmes comptes et mêmes données que l'app AFRP Launcher :
@@ -79,6 +86,11 @@ export const StaffScreen = React.memo(({ navigation }: StaffScreenType) => {
   // Support (boîte staff)
   const [convos, setConvos] = useState<ConvoPreview[]>([]);
   const [openConvo, setOpenConvo] = useState<string>('');
+
+  // Demandes d'achat (Boutique, onglet Cash)
+  const [purchaseRequests, setPurchaseRequests] = useState<PurchaseRequest[]>(
+    [],
+  );
 
   // Logs de crash du jeu
   const [logs, setLogs] = useState<string | null>(null);
@@ -190,6 +202,41 @@ export const StaffScreen = React.memo(({ navigation }: StaffScreenType) => {
       return undefined;
     }
   }, [rank]);
+
+  // Demandes d'achat (Boutique, onglet Cash) — lisible par le staff seulement
+  useEffect(() => {
+    if (!rank) {
+      return undefined;
+    }
+    try {
+      const r = dbRef('purchase_requests').limitToLast(30);
+      const cb = r.on('value', snap => {
+        const list: PurchaseRequest[] = [];
+        snap.forEach(child => {
+          const v = child.val() || {};
+          list.push({
+            id: child.key ?? '',
+            pseudo: String(v.pseudo ?? ''),
+            pack: String(v.pack ?? ''),
+            prix: String(v.prix ?? ''),
+            ts: v.ts ?? 0,
+          });
+          return undefined;
+        });
+        list.sort((a, b) => b.ts - a.ts);
+        setPurchaseRequests(list);
+      });
+      return () => r.off('value', cb);
+    } catch (e) {
+      return undefined;
+    }
+  }, [rank]);
+
+  const onDismissPurchaseRequest = (id: string) => {
+    try {
+      dbRef(`purchase_requests/${id}`).remove();
+    } catch (e) {}
+  };
 
   const onLogin = useCallback(async () => {
     if (busy) {
@@ -670,6 +717,31 @@ export const StaffScreen = React.memo(({ navigation }: StaffScreenType) => {
         <ButtonLauncher btnWidth={'100%'} background={'#00a86b'} onPress={onGrantVip}>
           Attribuer le VIP
         </ButtonLauncher>
+
+        {/* Demandes d'achat — Boutique, onglet Cash */}
+        <Text style={styles.label}>
+          🛒 Demandes d'achat ({purchaseRequests.length})
+        </Text>
+        {purchaseRequests.length === 0 && (
+          <Text style={styles.hint}>Aucune demande pour l'instant.</Text>
+        )}
+        {purchaseRequests.map(p => (
+          <View key={p.id} style={styles.convoRow}>
+            <TouchableOpacity
+              style={styles.convo}
+              onPress={() => setVipPseudo(p.pseudo)}>
+              <Text style={styles.convoPseudo}>{p.pseudo}</Text>
+              <Text style={styles.convoLast} numberOfLines={1}>
+                {p.pack} — {p.prix}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.convoDelete}
+              onPress={() => onDismissPurchaseRequest(p.id)}>
+              <Text style={styles.convoDeleteText}>✅</Text>
+            </TouchableOpacity>
+          </View>
+        ))}
 
         {/* Support — boîte staff */}
         <Text style={styles.label}>📨 Conversations support ({convos.length})</Text>
