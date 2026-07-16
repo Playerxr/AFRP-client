@@ -23,9 +23,19 @@ import { usePermisionFile } from '../hooks/usePermisionFile';
 import { selectLoaderDownload } from '../selectors/loaderSelectors';
 import { selectUserName } from '../selectors/settingSelectors';
 import { dbRef } from '../services/afrpDb';
+import { ServerService } from '../services/server.service';
 import { startGameDownload } from '../thunks/loaderThunks';
 import { fetchServers } from '../thunks/serverThunks';
 import { fetchUserNameSetting } from '../thunks/settingsThunks';
+
+type Server2State = {
+  name: string;
+  address: string;
+  maintenance: boolean;
+  online: number;
+  status: boolean;
+  loading: boolean;
+};
 
 const { width } = Dimensions.get('window');
 
@@ -52,6 +62,14 @@ export const GameScreen = React.memo(() => {
   const [annonce, setAnnonce] = useState('');
   const [gameUrl, setGameUrl] = useState('');
   const [preparing, setPreparing] = useState(false);
+  const [server2, setServer2] = useState<Server2State>({
+    name: '',
+    address: '',
+    maintenance: false,
+    online: 0,
+    status: false,
+    loading: true,
+  });
   const update = useUpdateCheck();
   const { fetchPermision } = usePermisionFile();
   const downloading = useAppSelector(state => state.loader.downloading);
@@ -79,6 +97,63 @@ export const GameScreen = React.memo(() => {
       rG.off('value', cbG);
     };
   }, []);
+
+  // 2e serveur (nom/adresse/maintenance, configurable dans Espace Staff)
+  useEffect(() => {
+    const rN = dbRef('app_config/server2_name');
+    const cbN = rN.on('value', s =>
+      setServer2(prev => ({ ...prev, name: String(s.val() ?? '') })),
+    );
+    const rAddr = dbRef('app_config/server2_address');
+    const cbAddr = rAddr.on('value', s =>
+      setServer2(prev => ({ ...prev, address: String(s.val() ?? '') })),
+    );
+    const rM = dbRef('app_config/server2_maintenance');
+    const cbM = rM.on('value', s =>
+      setServer2(prev => ({ ...prev, maintenance: s.val() === true })),
+    );
+    return () => {
+      rN.off('value', cbN);
+      rAddr.off('value', cbAddr);
+      rM.off('value', cbM);
+    };
+  }, []);
+
+  // Statut du 2e serveur (rafraîchi toutes les 30 s, sauté si en maintenance)
+  useEffect(() => {
+    if (!server2.address || server2.maintenance) {
+      setServer2(prev => ({ ...prev, loading: false }));
+      return undefined;
+    }
+
+    let cancelled = false;
+    const check = async () => {
+      const [ip, portStr] = server2.address.split(':');
+      const port = parseInt(portStr, 10) || 7777;
+      try {
+        const { players } = await ServerService.getOnline(ip, port);
+        if (!cancelled) {
+          setServer2(prev => ({
+            ...prev,
+            online: players,
+            status: true,
+            loading: false,
+          }));
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setServer2(prev => ({ ...prev, online: 0, status: false, loading: false }));
+        }
+      }
+    };
+
+    check();
+    const t = setInterval(check, 30000);
+    return () => {
+      cancelled = true;
+      clearInterval(t);
+    };
+  }, [server2.address, server2.maintenance]);
 
   const onEndPseudo = useCallback(() => {
     const clean = pseudo.trim();
@@ -229,10 +304,53 @@ export const GameScreen = React.memo(() => {
           <Text style={styles.btnActionText}>{downloadLabel}</Text>
         </TouchableOpacity>
 
-        <Text style={styles.serverLine}>
-          Serveur : {distServer?.address ?? '51.38.205.167:24328'}
-          {'  •  '}SAMP {distServer?.sampVersion ?? '0.3.7'}
-        </Text>
+        {/* Serveurs */}
+        <View style={styles.serversList}>
+          <View style={styles.serverRow}>
+            <View
+              style={[
+                styles.serverDot,
+                { backgroundColor: server?.status ? '#00ff88' : '#b63939' },
+              ]}
+            />
+            <Text style={styles.serverRowText}>
+              {distServer?.name || 'AFRP'} — {distServer?.address ?? '51.38.205.167:24328'}
+              {'  •  '}
+              {server?.loading
+                ? '...'
+                : server?.status
+                ? `${server?.online ?? 0} en ligne`
+                : 'hors ligne'}
+            </Text>
+          </View>
+          {server2.address.length > 0 && (
+            <View style={styles.serverRow}>
+              <View
+                style={[
+                  styles.serverDot,
+                  {
+                    backgroundColor: server2.maintenance
+                      ? '#b6862a'
+                      : server2.status
+                      ? '#00ff88'
+                      : '#b63939',
+                  },
+                ]}
+              />
+              <Text style={styles.serverRowText}>
+                {server2.name || 'AFRP #2'} — {server2.address}
+                {'  •  '}
+                {server2.maintenance
+                  ? 'en maintenance'
+                  : server2.loading
+                  ? '...'
+                  : server2.status
+                  ? `${server2.online} en ligne`
+                  : 'hors ligne'}
+              </Text>
+            </View>
+          )}
+        </View>
 
         {/* Actualités */}
         <View style={styles.news}>
@@ -395,12 +513,20 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     fontFamily: 'sans-serif-condensed',
   },
-  serverLine: {
+  serversList: {
+    marginTop: 8,
+    alignItems: 'center',
+  },
+  serverRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  serverDot: { width: 6, height: 6, borderRadius: 3, marginRight: 6 },
+  serverRowText: {
     color: '#2a4a35',
     fontSize: 9,
     letterSpacing: 1,
-    textAlign: 'center',
-    marginTop: 8,
     fontFamily: 'sans-serif-condensed',
   },
   news: { marginTop: 18 },

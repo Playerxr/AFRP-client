@@ -71,6 +71,11 @@ export const StaffScreen = React.memo(({ navigation }: StaffScreenType) => {
   // Lien de téléchargement du jeu (bouton "Télécharger le jeu" de l'accueil)
   const [gameUrl, setGameUrl] = useState('');
 
+  // Second serveur (accueil) : nom, adresse "ip:port", en maintenance ou non
+  const [server2Name, setServer2Name] = useState('');
+  const [server2Address, setServer2Address] = useState('');
+  const [server2Maintenance, setServer2Maintenance] = useState(false);
+
   // Actualité + mise à jour (fondateur)
   const [newsTitle, setNewsTitle] = useState('');
   const [newsText, setNewsText] = useState('');
@@ -161,9 +166,24 @@ export const StaffScreen = React.memo(({ navigation }: StaffScreenType) => {
       const cb = r.on('value', snap => setAnnonce(String(snap.val() ?? '')));
       const rG = dbRef('app_config/game_url');
       const cbG = rG.on('value', snap => setGameUrl(String(snap.val() ?? '')));
+      const rS2n = dbRef('app_config/server2_name');
+      const cbS2n = rS2n.on('value', snap =>
+        setServer2Name(String(snap.val() ?? '')),
+      );
+      const rS2a = dbRef('app_config/server2_address');
+      const cbS2a = rS2a.on('value', snap =>
+        setServer2Address(String(snap.val() ?? '')),
+      );
+      const rS2m = dbRef('app_config/server2_maintenance');
+      const cbS2m = rS2m.on('value', snap =>
+        setServer2Maintenance(snap.val() === true),
+      );
       return () => {
         r.off('value', cb);
         rG.off('value', cbG);
+        rS2n.off('value', cbS2n);
+        rS2a.off('value', cbS2a);
+        rS2m.off('value', cbS2m);
       };
     } catch (e) {
       return undefined;
@@ -363,6 +383,23 @@ export const StaffScreen = React.memo(({ navigation }: StaffScreenType) => {
       );
     }
   }, [gameUrl]);
+
+  const onSaveServer2 = useCallback(async () => {
+    try {
+      await dbRef('app_config/server2_name').set(server2Name.trim());
+      await dbRef('app_config/server2_address').set(server2Address.trim());
+      await dbRef('app_config/server2_maintenance').set(server2Maintenance);
+      Alert.alert('2e serveur', 'Enregistré, visible sur l\'accueil de tous les joueurs.');
+    } catch (e: any) {
+      const msg = String(e?.message ?? e);
+      Alert.alert(
+        '2e serveur refusé',
+        msg.toLowerCase().includes('permission')
+          ? `Ton compte n'est pas "fondateur". UID : ${StaffSession.uid}`
+          : msg,
+      );
+    }
+  }, [server2Name, server2Address, server2Maintenance]);
 
   const onPublishNews = useCallback(async () => {
     const t = newsTitle.trim();
@@ -613,6 +650,39 @@ export const StaffScreen = React.memo(({ navigation }: StaffScreenType) => {
               background={'#00a86b'}
               onPress={onSaveGameUrl}>
               Enregistrer le lien du jeu
+            </ButtonLauncher>
+
+            {/* 2e serveur (liste "Serveurs" de l'accueil) */}
+            <Text style={styles.label}>🖥 2e serveur (accueil)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Nom (ex : AFRP #2)"
+              placeholderTextColor="rgba(255,255,255,0.5)"
+              value={server2Name}
+              onChangeText={setServer2Name}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Adresse ip:port (ex : 51.68.107.75:21982)"
+              placeholderTextColor="rgba(255,255,255,0.5)"
+              autoCapitalize="none"
+              value={server2Address}
+              onChangeText={setServer2Address}
+            />
+            <View style={styles.switchRow}>
+              <Text style={styles.switchLabel}>En maintenance</Text>
+              <Switch
+                value={server2Maintenance}
+                onValueChange={setServer2Maintenance}
+                trackColor={{ false: '#16324a', true: '#00c880' }}
+                thumbColor={'#ffffff'}
+              />
+            </View>
+            <ButtonLauncher
+              btnWidth={'100%'}
+              background={'#00a86b'}
+              onPress={onSaveServer2}>
+              Enregistrer le 2e serveur
             </ButtonLauncher>
 
             {/* Actualité */}
