@@ -53,16 +53,16 @@ const VIP_DATA: [string, string, string, string, string, string][] = [
 // [nom, emoji, prix, cash crédité, bonus]
 const CASH_DATA: [string, string, string, string, string][] = [
   ['Pack Civil', '👮', '5 000 XOF', '3 250 000 $', ''],
-  ['Pack Gangster', '🔫', '5 000 XOF', '11 000 000 $', '+375 000 $ offerts'],
-  ['Pack Business', '💼', '10 000 XOF', '15 000 000 $', '+3 750 000 $ offerts'],
+  ['Pack Gangster', '🔫', '10 000 XOF', '11 000 000 $', '+375 000 $ offerts'],
+  ['Pack Business', '💼', '15 000 XOF', '22 000 000 $', '+3 750 000 $ offerts'],
   [
     'Pack Millionnaire',
     '🤑',
-    '18 000 XOF',
-    '25 000 000 $',
+    '28 000 XOF',
+    '45 000 000 $',
     '+12 750 000 $ offerts',
   ],
-  ['Pack Parrain', '👑', '35 000 XOF', '75 000 000 $', 'Bonus XXL offert'],
+  ['Pack Parrain', '👑', '45 000 XOF', '85 000 000 $', 'Bonus XXL offert'],
 ];
 
 export const DonateScreen = React.memo(() => {
